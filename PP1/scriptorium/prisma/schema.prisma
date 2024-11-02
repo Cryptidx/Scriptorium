@@ -12,43 +12,41 @@ datasource db {
 
 
 model Template {
+  id           Int       @id @default(autoincrement())
+  ownerId      Int       // Foreign key to User
+  owner        User      @relation(fields: [ownerId], references: [id])
+
+  forkedFromId Int?      // Nullable foreign key to reference another Template's ID; check in backend logic
+
+  code         String    // File path to the code saved on the server
+  language     String
+  title        String
+  explanation  String
+  tags         String?   // JSON field for tags, for SQLite
+  blogs        Blog[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+
+
+model User {
   id          Int       @id @default(autoincrement())
-  owner       User      @relation(fields: [ownerId], references: [id]) // Foreign key to User
-  forkedFrom  Int?     // Nullable foreign key to reference another Template, have to do check in backend logic
-  
-  code        String    // File path to the code saved on the server
-  langauge    String
-  title       String
-  explanation String
-  tags        String?   // JSON field for tags, for SQLite
-  blogs       Blog[]
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-enum Role {
-  USER
-  SYS_ADMIN
-}
-
-model User{
-  id          Int      @id @default(autoincrement())
   firstName   String
   lastName    String
-  email       String   @unique
+  email       String    @unique
   password    String
   phoneNumber String 
-  role        Role     @default(USER)
-  avatar      String   @default("uploads/default-avatar.png") // Default avatar path
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  role        String    @default("USER") // Store as a String instead of Enum
+  avatar      String    @default("uploads/default-avatar.png") // Default avatar path
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  // one user can make many blogs 
-  blogs Blog[]
-  // one user can make many comments 
-  comments Comment[]
+  blogs       Blog[]    // One user can create many blogs
+  comments    Comment[] // One user can make many comments
+  templates   Template[] // One user can create many templates
+
 }
 
 
@@ -56,7 +54,7 @@ model Blog{
   // things specific to blog 
   id Int @id @default(autoincrement())
   title String 
-  tag String
+  tags         String?   // JSON field for tags, for SQLite
   // a blog can have many templates
   templates Template[]
 
@@ -76,8 +74,8 @@ model Blog{
 }
 
 model Comment{
-  id Int @id @default(autoincrement())
-  blogId Int
+  id      Int @id @default(autoincrement())
+  blogId  Int
   flagged Boolean @default(false)
   description String
 
