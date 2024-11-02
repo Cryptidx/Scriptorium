@@ -54,22 +54,24 @@ model Blog{
   // things specific to blog 
   id Int @id @default(autoincrement())
   title String 
-  tags         String   // JSON field for tags, for SQLite
-  // a blog can have many templates
-  templates Template[]
+  description String
+  tag String
+  // a blog can have many templates, or no templates
+  templates Template[] 
 
   // shared things 
-  flagged Boolean @default(false)
-  description String
+  flagged Boolean @default(false) // make sense
+ 
 
   // one author to many blogs 
+  // the creator is the current user 
   authorId Int
   author User @relation(fields: [authorId], references: [id])
 
-  createdAt DateTime @default(now())
-  comments Comment[]
-  upvotes Int
-  downvotes Int
+  createdAt DateTime @default(now()) // sensibel
+  comments Comment[]  // make sense
+  upvotes Int // make sense 
+  downvotes Int // make sense
 
 }
 
@@ -101,6 +103,6 @@ model Report {
 
   authorId     Int      // Foreign key to the User model for the reporting user
   author       User     @relation(fields: [authorId], references: [id])
-  
+
   createdAt    DateTime @default(now()) // Timestamp of when the report was created
 }
