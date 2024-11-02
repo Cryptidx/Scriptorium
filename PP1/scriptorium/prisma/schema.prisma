@@ -13,9 +13,7 @@ datasource db {
 
 model Template {
   id      Int   @id @default(autoincrement())
-  blogId  Int
-  value   Int   // Template value, as BlogTemplate allows multiple templates for a blog
-  blog    Blog  @relation(fields: [blogId], references: [id])
+  blog    Blog[]
 }
 
 model User{
@@ -32,22 +30,24 @@ model Blog{
   // things specific to blog 
   id Int @id @default(autoincrement())
   title String 
+  description String
   tag String
-  // a blog can have many templates
-  templates Template[]
+  // a blog can have many templates, or no templates
+  templates Template[] 
 
   // shared things 
-  flagged Boolean @default(false)
-  description String
+  flagged Boolean @default(false) // make sense
+ 
 
   // one author to many blogs 
+  // the creator is the current user 
   authorId Int
   author User @relation(fields: [authorId], references: [id])
 
-  createdAt DateTime @default(now())
-  comments Comment[]
-  upvotes Int
-  downvotes Int
+  createdAt DateTime @default(now()) // sensibel
+  comments Comment[]  // make sense
+  upvotes Int // make sense 
+  downvotes Int // make sense
 
 }
 
