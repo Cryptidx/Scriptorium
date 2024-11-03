@@ -1,6 +1,5 @@
 import { authMiddleware } from '../../../lib/auth'; // Authentication middleware
 import prisma from '../../../lib/prisma'; // Prisma client instance
-import paginate from '../../../lib/paginated-get';
 
 export default async function handler(req, res) {
     try {
@@ -47,6 +46,25 @@ export default async function handler(req, res) {
     }
   }
   
+  /**
+ * @api {post} /api/reports/report Submit a content report
+ * @apiName SubmitReport
+ * @apiGroup Report
+ * @apiVersion 1.0.0
+ *
+ * @apiHeader {String} Authorization User's access token.
+ *
+ * @apiBody {Number} contentId ID of the content being reported (Blog or Comment).
+ * @apiBody {String="BLOG","COMMENT"} contentType Type of the content being reported.
+ * @apiBody {String} explanation Explanation for the report.
+ *
+ * @apiSuccess {String} message Success message.
+ * @apiSuccess {Object} report Details of the created report.
+ *
+ * @apiError (400) InvalidContentType Invalid content type.
+ * @apiError (404) ContentNotFound Content to report was not found.
+ * @apiError (422) UnprocessableEntity Content could not be provided.
+ */
 // Handler to allow users to create reports
 async function handleReportSubmission(req, res, userId) {
     try {
@@ -91,6 +109,25 @@ async function handleReportSubmission(req, res, userId) {
     }
 }
 
+
+  /**
+ * @api {get} /api/reports/report Get list of reports (Admin only)
+ * @apiName GetReportListing
+ * @apiGroup Report
+ * @apiVersion 1.0.0
+ *
+ * @apiHeader {String} Authorization Admin's access token.
+ *
+ * @apiParam {Number} [page=1] Page number for pagination.
+ * @apiParam {Number} [pageSize=10] Number of items per page.
+ *
+ * @apiSuccess {Object[]} data Array of reported content with counts.
+ * @apiSuccess {Number} meta.totalCount Total number of reports.
+ * @apiSuccess {Number} meta.totalPages Total pages.
+ * @apiSuccess {Number} meta.currentPage Current page number.
+ *
+ * @apiError (422) UnprocessableEntity Content could not be provided.
+ */
 async function handleReportListing(req, res) {
     const { page = 1, pageSize = 10 } = req.query;
     const skip = (page - 1) * pageSize;
@@ -173,7 +210,27 @@ async function handleReportListing(req, res) {
     }
   }
   
-  
+
+
+  /**
+ * @api {put} /api/reports/report Hide reported content (Admin only)
+ * @apiName HideContent
+ * @apiGroup Report
+ * @apiVersion 1.0.0
+ *
+ * @apiHeader {String} Authorization Admin's access token.
+ *
+ * @apiBody {Number} contentId ID of the content to hide (Blog or Comment).
+ * @apiBody {String="BLOG","COMMENT"} contentType Type of the content to hide.
+ *
+ * @apiSuccess {String} message Success message.
+ * @apiSuccess {Object} content Updated content details.
+ *
+ * @apiError (400) InvalidContentType Invalid content type.
+ * @apiError (404) ContentNotFound Content to hide was not found.
+ * @apiError (422) UnprocessableEntity Content could not be hidden.
+ */
+
   async function handleContentHiding(req, res) {
     try {
       const { contentId, contentType } = req.body;
@@ -181,12 +238,34 @@ async function handleReportListing(req, res) {
       if (!['BLOG', 'COMMENT'].includes(contentType)) {
         return res.status(400).json({ error: 'Invalid content type. Must be "BLOG" or "COMMENT".' });
       }
+
+      // Check if the content exists in the specified table
+        let contentExists = false;
+        if (contentType === 'BLOG') {
+        contentExists = await prisma.blog.findUnique({
+            where: { id: contentId },
+        });
+        } else if (contentType === 'COMMENT') {
+        contentExists = await prisma.comment.findUnique({
+            where: { id: contentId },
+        });
+        }
+
+        // Return an error if the content does not exist
+        if (!contentExists) {
+        return res.status(404).json({ error: 'Content not found. Unable to hide non-existent content.' });
+        }
   
-      // Update the flagged status of the specified content
-      const updatedContent = await prisma[contentType.toLowerCase()].update({
-        where: { id: contentId },
-        data: { flagged: true },
-      });
+      // Flag the content
+        const updatedContent = contentType === 'BLOG'
+        ? await prisma.blog.update({
+            where: { id: contentId },
+            data: { flagged: true },
+        })
+        : await prisma.comment.update({
+            where: { id: contentId },
+            data: { flagged: true },
+        });
   
       res.status(200).json({ message: 'Content flagged successfully', content: updatedContent });
     } catch (error) {

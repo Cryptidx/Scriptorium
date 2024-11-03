@@ -1,7 +1,9 @@
-import bcrypt from 'bcrypt';
-import prisma from './lib/prisma'; // Adjust path if necessary
+const bcrypt = require('bcrypt');
 
-// execute w node: node create-sys-admin.js
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Execute with: `node create-sys-admin.js`
 
 const saltRounds = 10;
 
@@ -12,7 +14,7 @@ async function main() {
   const firstName = 'Sys';
   const lastName = 'Admin';
   const phoneNumber = '0000000000'; // Placeholder, adjust if needed
-  const role = 'sys admin';
+  const role = 'SYS_ADMIN'; // Ensure this matches exactly with your schema
 
   // Hash the password
   const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -20,7 +22,7 @@ async function main() {
   try {
     // Check if a sys admin user already exists
     const existingSysAdmin = await prisma.user.findFirst({
-      where: { role: 'sys admin' },
+      where: { role: 'SYS_ADMIN' },
     });
 
     if (existingSysAdmin) {

@@ -14,16 +14,20 @@ datasource db {
 model Template {
   id           Int       @id @default(autoincrement())
   ownerId      Int       // Foreign key to User
-  owner        User      @relation(fields: [ownerId], references: [id])
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  forkedFromId Int?      // Nullable foreign key to reference another Template's ID; check in backend logic
+  forkedFromId Int?      // Nullable foreign key to reference another Template's ID
+  forkedFrom   Template? @relation("ForkedTemplates", fields: [forkedFromId], references: [id])
+  forkedCopies Template[] @relation("ForkedTemplates")
 
   code         String    // File path to the code saved on the server
   language     String
   title        String
   explanation  String
-  tags         String   // JSON field for tags, for SQLite
-  blogs        Blog[]
+  tag          String    // JSON field for tags
+
+  // Many-to-many relationship with blogs
+  blogs        Blog[]    @relation("BlogTemplates")
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -37,63 +41,56 @@ model User {
   lastName    String
   email       String    @unique
   password    String
-  phoneNumber String 
-  role        String    @default("USER") // Store as a String instead of Enum, 
-  avatar      String    @default("uploads/default-avatar.png") // Default avatar path
+  phoneNumber String
+  role        String    @default("USER")
+  avatar      String    @default("/avatar_images/pfp5.png")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   blogs       Blog[]    // One user can create many blogs
   comments    Comment[] // One user can make many comments
   templates   Template[] // One user can create many templates
-
+  reports     Report[]     // One user can create many reports
 }
 
 
-model Blog{
-  // things specific to blog 
-  id Int @id @default(autoincrement())
-  title String 
+model Blog {
+  id          Int       @id @default(autoincrement())
+  title       String
   description String
-  tags String
-  // a blog can have many templates, or no templates
-  templates Template[] 
+  tag         String
+  templates   Template[] @relation("BlogTemplates")  // a blog can have many templates, or no templates
 
-  // shared things 
-  flagged Boolean @default(false) // make sense
- 
+  flagged     Boolean    @default(false)
+  authorId    Int
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  // one author to many blogs 
-  // the creator is the current user 
-  authorId Int
-  author User @relation(fields: [authorId], references: [id])
-
-  createdAt DateTime @default(now()) // sensibel
-  comments Comment[]  // make sense
-  upvotes Int @default(0)
-  downvotes Int @default(0)
-
+  createdAt   DateTime   @default(now())
+  comments    Comment[]
+  upvotes     Int @default(0)
+  downvotes   Int @default(0)
 }
 
-model Comment{
-  id      Int @id @default(autoincrement())
-  blogId  Int
-  flagged Boolean @default(false)
+model Comment {
+  id          Int       @id @default(autoincrement())
+  blogId      Int
+  blog        Blog      @relation(fields: [blogId], references: [id], onDelete: Cascade) // Cascade delete
+
+  flagged     Boolean   @default(false)
   description String
 
-  // one author to many blogs 
-  authorId Int
-  author User @relation(fields: [authorId], references: [id])
+  authorId    Int
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  blog        Blog       @relation(fields: [blogId], references: [id])
-  parentId    Int?       // For subcomments, nullable for top-level comments
-  parent      Comment?   @relation("Subcomments", fields: [parentId], references: [id])
-  subcomments Comment[]  @relation("Subcomments")
+  createdAt   DateTime  @default(now())
+  parentId    Int?
+  parent      Comment?  @relation("Subcomments", fields: [parentId], references: [id], onDelete: Cascade)
+  subcomments Comment[] @relation("Subcomments")
 
   upvotes Int @default(0)
   downvotes Int @default(0)
 }
+
 
 model Report {
   id           Int      @id @default(autoincrement())
@@ -102,7 +99,7 @@ model Report {
   explanation  String   // Additional explanation provided by the user
 
   authorId     Int      // Foreign key to the User model for the reporting user
-  author       User     @relation(fields: [authorId], references: [id])
+  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime @default(now()) // Timestamp of when the report was created
+  createdAt    DateTime @default(now())
 }

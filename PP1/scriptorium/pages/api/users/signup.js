@@ -2,7 +2,8 @@ import bcrypt from 'bcrypt';
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 import {isValidPassword, isValidEmail, isValidPhoneNumber} from '../../../lib/validate';    
 
-const saltRounds = 10;
+const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
+
 
 // Hash password function
 async function hashPassword(password) {
@@ -32,7 +33,7 @@ export default async function handler(req, res) {
         error: 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one number, and one special character.',
       });
     }
-    
+
     // Validate confirm password
     if(password !== confirmPassword) {
       return res.status(400).json({ error: 'Passwords do not match.' });
@@ -61,7 +62,6 @@ export default async function handler(req, res) {
           email,
           phoneNumber,
           role,
-          avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', // place holder, everything must b stored in server 
         },
       });
   
@@ -74,10 +74,17 @@ export default async function handler(req, res) {
           phoneNumber: newUser.phoneNumber,
           role: newUser.role,
           createdAt: newUser.createdAt,
+          avatar: newUser.avatar,
         },
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'User creation failed.' });
+      if (error.message.includes('validation') || error.code === 'P2002') {
+        // Prisma P2002 code is for unique constraint violations (e.g., duplicate email)
+        res.status(400).json({ error: 'Bad Request: Data validation failed or duplicate entry.' });
+      } else {
+        // Use 422 Unprocessable Entity for other unexpected issues
+        res.status(422).json({ error: 'Unprocessable Entity: Unable to create user.' });
+      }
     }
   }

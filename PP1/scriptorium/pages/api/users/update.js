@@ -1,35 +1,67 @@
 import bcrypt from 'bcrypt';
 import prisma from '../../../lib/prisma'; // Database client
 import { isValidPassword, isValidEmail, isValidPhoneNumber } from '../../../lib/validate';
-import { performChecks, isAuthenticated } from '../../../lib/auth'; // Import authentication check and middleware wrapper
-import uploadMiddleware from '../../../lib/upload'; // File upload middleware
-import { isAllowedFileType } from '../../../lib/fileTypeChecker'; // Import the file type checker
+import { authMiddleware } from '../../../lib/auth'; // Use authMiddleware for authentication check
 
-const saltRounds = 10;
+const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
 
-const allowedMimeTypesForUpdate = [
-    'image/png',
-    'image/jpeg',
-    'image/jpg', 
-    'application/pdf',
-  ];
+const allowedAvatars = [
+    '/avatar_images/pfp1.png',
+    '/avatar_images/pfp2.png',
+    '/avatar_images/pfp3.png',
+    '/avatar_images/pfp4.png',
+    '/avatar_images/pfp5.png',
+];
 
+// Hash password function
 async function hashPassword(password) {
   return await bcrypt.hash(password, saltRounds);
 }
 
-const updateHandler = uploadMiddleware; // Initialize with file upload middleware
+/**
+ * @api {put} /api/users/update Update user information
+ * @apiName UpdateUser
+ * @apiGroup User
+ * @apiVersion 1.0.0
+ *
+ * @apiHeader {String} Authorization User's access token.
+ *
+ * @apiBody {String} [firstName] New first name.
+ * @apiBody {String} [lastName] New last name.
+ * @apiBody {String} [email] New email address.
+ * @apiBody {String} [phoneNumber] New phone number.
+ * @apiBody {String} [password] New password.
+ * @apiBody {String} [confirmPassword] Confirmation for the new password.
+ * @apiBody {String} [avatar] Avatar image path (selected from predefined list).
+ *
+ * @apiSuccess {String} message Success message.
+ * @apiSuccess {Object} user Updated user data.
+ * @apiSuccess {Number} user.id User ID.
+ * @apiSuccess {String} user.firstName First name.
+ * @apiSuccess {String} user.lastName Last name.
+ * @apiSuccess {String} user.email Email.
+ * @apiSuccess {String} user.phoneNumber Phone number.
+ * @apiSuccess {String} user.avatar Updated avatar URL.
+ *
+ * @apiError (400) ValidationError Validation errors if fields are invalid.
+ * @apiError (401) Unauthorized Invalid access token.
+ * @apiError (405) MethodNotAllowed Only PUT requests are allowed.
+ * @apiError (422) UpdateFailed unable to update user.
+ */
 
 // Main handler logic for updating user details
-updateHandler.put(async (req, res) => {
-  const userId = req.userId; // Use the userId set by isAuthenticated middleware
-
-  // Check if a file is provided and its type is allowed for this route
-  if (req.file && !isAllowedFileType(req.file, allowedMimeTypesForUpdate)) {
-    return res.status(400).json({ error: 'Only PNG, JPEG, JPG and PDF files are allowed for custom avatar images!' });
+async function updateHandler(req, res) {
+  if (req.method !== 'PUT') {
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 
-  const { firstName, lastName, password, confirmPassword, email, phoneNumber, role } = req.body;
+  // Run authMiddleware and get userId from the requestif (!getFullUser) {
+  const authRes = await authMiddleware(req, res);
+  if (!authRes) return; // Exit if unauthorized
+
+  const { userId } = authRes;
+
+  const { firstName, lastName, password, confirmPassword, email, phoneNumber, avatar } = req.body;
   let updates = {};
 
   // Check if at least one field is provided
@@ -39,8 +71,7 @@ updateHandler.put(async (req, res) => {
     password, 
     email, 
     phoneNumber, 
-    role, 
-    req.file, // Check if a file is provided
+    avatar, // Check if an avatar is provided
   ].some(field => field !== undefined && field !== null && field !== '');
 
   if (!hasUpdateField) {
@@ -54,7 +85,20 @@ updateHandler.put(async (req, res) => {
     if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Invalid email address.' });
     }
-    updates.email = email;
+  
+    // Check if the email is already used by another user
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email,
+        NOT: { id: userId }, // Exclude the current user by their ID
+      },
+    });
+  
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email is already in use by another account.' });
+    }
+  
+    updates.email = email; // Set the email for updating if it passes validation
   }
   if (phoneNumber) {
     if (!isValidPhoneNumber(phoneNumber)) {
@@ -64,7 +108,6 @@ updateHandler.put(async (req, res) => {
     }
     updates.phoneNumber = phoneNumber;
   }
-  if (role) updates.role = role;
 
   // Validate and hash password if provided
   if (password) {
@@ -79,17 +122,20 @@ updateHandler.put(async (req, res) => {
     updates.password = await hashPassword(password);
   }
 
-  // Handle file upload if an avatar is provided
-  if (req.file) {
-    updates.avatar = `/uploads/${req.file.filename}`; // Store the file path for the avatar
+  // Handle avatar if provided
+  if (avatar) {
+    if (!allowedAvatars.includes(avatar)) {
+      return res.status(400).json({ error: 'Invalid avatar selection. Please choose a predefined avatar.' });
+    }
+    updates.avatar = avatar;
   }
 
   try {
     // Update user in the database
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: updates,
-    });
+        where: { id: userId }, // Ensure userId is defined and available
+        data: updates,
+      });
 
     res.status(200).json({
       message: 'User updated successfully',
@@ -99,22 +145,21 @@ updateHandler.put(async (req, res) => {
         lastName: updatedUser.lastName,
         email: updatedUser.email,
         phoneNumber: updatedUser.phoneNumber,
-        role: updatedUser.role,
         avatar: updatedUser.avatar,
         updatedAt: updatedUser.updatedAt,
       },
     });
   } catch (error) {
     console.error('Error updating user:', error);
-    res.status(500).json({ error: 'User update failed.' });
+
+    if (error.message.includes('validation')) {
+        res.status(400).json({ error: 'Bad request: Data validation failed.' });
+    } else if (error.message.includes('unique constraint')) {
+        res.status(409).json({ error: 'Conflict: Duplicate data detected.' });
+    } else {
+        res.status(422).json({ error: 'Unprocessable Entity: Unable to process your request.' });
+    }
   }
-});
+}
 
-// Use performChecks to ensure only authenticated users can access this route
-export default performChecks(updateHandler, isAuthenticated);
-
-export const config = {
-  api: {
-    bodyParser: false, // Disable body parser to allow Multer to handle form data
-  },
-};
+export default updateHandler;

@@ -40,15 +40,15 @@ async function handlerCreate(req,res){
 
     const blog = await prisma.blog.create({
         data: {
-        title,
-        description,
+        title: title,
+        description: description,
         tags: tagsJson,
-        flagged: false,
-        author: { connect: { id: author.id } },
         templates: {
             connect: templateConnectArray,  // Connect existing templates by ID
         },
+        author: { connect: { id: author.id } },
         },
+        // will comments be empty by default??????
     });
 
     // returns entire blog for now 
