@@ -1,6 +1,5 @@
 import { authMiddleware } from '../../../lib/auth'; // Authentication middleware
 import prisma from '../../../lib/prisma'; // Prisma client instance
-import paginate from '../../../lib/paginated-get';
 
 export default async function handler(req, res) {
     try {

@@ -2,19 +2,21 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET; 
-const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET; 
+const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET_ACCESS; 
+const REFRESH_TOKEN_SECRET = process.env.JWT_SECRET_REFRESH; 
+const EXPIRE_ACCESS = process.env.JWT_EXPIRES_IN_ACCESS;
+const EXPIRE_REFRESH = process.env.JWT_EXPIRES_IN_REFRESH;
 
 function generateTokens(user) {
   const accessToken = jwt.sign(
     { userId: user.id, role: user.role },
     ACCESS_TOKEN_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: EXPIRE_ACCESS }
   );
   const refreshToken = jwt.sign(
     { userId: user.id },
     REFRESH_TOKEN_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: EXPIRE_REFRESH }
   );
   return { accessToken, refreshToken };
 }

@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 import {isValidPassword, isValidEmail, isValidPhoneNumber} from '../../../lib/validate';    
 
-const saltRounds = 10;
+const saltRounds = process.env.BCRYPT_SALT_ROUNDS;
 
 // Hash password function
 async function hashPassword(password) {
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
         error: 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one number, and one special character.',
       });
     }
-    
+
     // Validate confirm password
     if(password !== confirmPassword) {
       return res.status(400).json({ error: 'Passwords do not match.' });
