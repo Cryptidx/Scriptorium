@@ -36,7 +36,8 @@ async function handlerDelete(req,res){
     } 
 
     catch (error) {
-        return res.status(500).json({ error: 'Failed to delete blog' });
+        console.error("Error deleting blog:", error);
+        return res.status(422).json({ message: "Unprocessable entity: Unable to delete the blog" });
     }
 
 }
@@ -115,7 +116,8 @@ async function handlerUpdate(req,res){
     }
 
     catch(error){
-        return res.status(500).json({ message: "Failed to update blog post", error });
+        console.error("Error updating blog:", error);
+        return res.status(422).json({ message: "Unprocessable entity: Unable to update the blog" });
     }
     
     // when it comes to editing comments, use other pathway 
@@ -126,7 +128,7 @@ async function handlerUpdate(req,res){
 export default async function handler(req, res) {
     // delete and update are restricted pathways 
 
-    const author = authMiddleware(req, res);
+    const author = await authMiddleware(req, res, { getFullUser: true });
     if (!author) {
         // could be null, cos we don't have a current user by jwt 
         return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
