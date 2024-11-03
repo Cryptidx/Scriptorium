@@ -108,7 +108,11 @@ import prisma from "@/utils/db"
 //     return res.status(400).json({ error: `Method ${method} Not Allowed`});
 // }
 
-
+/* 
+UPDATE COMMENTS IDENTIFIABLE BY COMMENT ID 
+ALSO, DELETE COMMENTS (doesn't really delete them, but changes their flag for 
+)
+ */
 export default async function handler(req,res){
     // this should update top level and sub level commets 
     // cos all we need is comment id tbh
@@ -119,13 +123,20 @@ export default async function handler(req,res){
         return res.setHeader('Allow', ['PUT']).status(405).end(`Method ${method} Not Allowed`);
     }
 
-    const author = authMiddleware(req, res);
-    if (!author) {
-        // could be null, cos we don't have a current user by jwt 
-        return res.status(401).json({ message: "Unauthorized. Please log in to update a blog." });
+    try{
+        const author = await authMiddleware(req, res);
+        if (!author) {
+            // could be null, cos we don't have a current user by jwt 
+            return res.status(401).json({ message: "Unauthorized. Please log in to update a blog." });
+        }
     }
 
-    const {commentId} = req.query;
+    catch(error){
+        return res.status(422).json({ message: "Failed to find current user", error });
+    }
+  
+
+    const {commentId} = req.query.commentId;
     const comment_id = parseInt(commentId);
 
     if (isNaN(comment_id)) {
@@ -173,6 +184,6 @@ export default async function handler(req,res){
     }
 
     catch(error){
-        return res.status(500).json({ message: "Failed to update blog post", error });
+        return res.status(422).json({ message: "Failed to update blog post", error });
     }
 }

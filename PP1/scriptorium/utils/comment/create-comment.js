@@ -6,18 +6,24 @@ export default async function handlerCreateComment(req,res,which){
         return res.status(405).json({message: "method not allowed"});
     }
 
-    const author = authMiddleware(req, res);
-    if (!author) {
-        // could be null, cos we don't have a current user by jwt 
-        return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+    try{
+        const author = await authMiddleware(req, res);
+        if (!author) {
+            // could be null, cos we don't have a current user by jwt 
+            return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+        }
     }
+    catch(error){
+        return res.status(422).json({ message: "Failed to find current user", error });
+    }
+   
 
     const { blogId, commentId } = req.query;
     const blog_id = parseInt(blogId);
     const comment_id = which === 1 ? parseInt(commentId) : null; 
     
 
-    if (isNaN(blogId) || (which === 1 && isNaN(commentId))) {
+    if (isNaN(blog_id) || (which === 1 && isNaN(comment_id))) {
         return res.status(400).json({ error: 'Invalid comment or blog ID' });
     }
 
@@ -29,7 +35,7 @@ export default async function handlerCreateComment(req,res,which){
     }
 
     let newData = {
-        blogId: blogId,
+        blogId: blog_id,
         description: description.trim(),
         author: { connect: { id: author.id } },
     };
@@ -37,9 +43,10 @@ export default async function handlerCreateComment(req,res,which){
     if(which === 1){
         // subcomment
         // Set the parent comment ID for subcomment
-        newData.parentId = commentId;
+        newData.parentId = comment_id;
     }
 
+    
     try {
         // Create the subcomment
         const comment = await prisma.comment.create({
@@ -50,7 +57,7 @@ export default async function handlerCreateComment(req,res,which){
     } 
     
     catch (error) {
-        return res.status(500).json({ message: "Failed to create comment", error });
+        return res.status(422).json({ message: "Failed to create comment", error });
     }
 }
 
