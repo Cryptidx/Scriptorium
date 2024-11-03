@@ -1,8 +1,11 @@
 import prisma from "@/utils/db"
 
-// delete a blog by id 
-// will deleting a blog delete its associated comments?
+/*
+DELETE AND UPDATE BLOG FOUND BY BLOG ID
+*/
 
+// delete a blog by id 
+// will deleting a blog delete its associated comments? i think so 
 async function handlerDelete(req,res){
     // do we delete coressponding relations
     const { id } = req.query;
@@ -63,7 +66,7 @@ async function handlerUpdate(req,res){
     // upvotes
     // downvotes
 
-    const {title, description, tags, flagged, upvotes, downvotes} = req.body;
+    const {title, description, tag, flagged, upvotes, downvotes} = req.body;
     const updateData = {};
 
     if (title !== undefined){
@@ -85,10 +88,10 @@ async function handlerUpdate(req,res){
 
     if (tags !== undefined){
         // CHAT GPT 
-        if (!Array.isArray(tags) || tags.length === 0 || tags.some(tag => typeof tag !== 'string' || tag.trim() === '')) {
+        if (!Array.isArray(tag) || tag.length === 0 || tag.some(tag => typeof tag !== 'string' || tag.trim() === '')) {
             return res.status(400).json({ message: "Tags must be a non-empty array of non-empty strings" });
         }
-        updateData.tags = JSON.stringify(tags.map(tag => tag.trim()));  // Ensure tags are JSON-formatted
+        updateData.tags = JSON.stringify(tag.map(tag => tag.trim()));  // Ensure tags are JSON-formatted
     } 
 
 

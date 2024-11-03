@@ -1,24 +1,12 @@
 import handlerCreateComment from "@/utils/comment/create-comment";
-// top level comment
-
-// add a comment to a given blog identified by blog id (POST)
-
-// we would need to create the comment, 
-// then add it to the blog 
-// this is a top level comment 
-
-// for updating comments, go to specific comment handler
 
 //  a comment has 
-// description, author, flagged, upvotes, downvotes
-// replies will be empty for now 
+// description, author need to be filled on creation
 
+// replies will be empty for now 
+// flagged, upvotes, downvotes, replies
 // those will be changed by comment handler 
 
-
-// create a top level function
-
-// pack this into a utils. It's really similar to reply.js
 // export default async function handler(req,res){
 //     if(req.method !== "POST"){
 //         return res.status(405).json({message: "method not allowed"});
@@ -64,10 +52,9 @@ import handlerCreateComment from "@/utils/comment/create-comment";
 // }
 
 export default async function handler(req,res){
-    // toplevel
-    // how do we have these shared stuff 
+    // top level comment
+    // add a comment to a given blog identified by blog id (POST)
 
-    // how do we await?
-
-    return handlerCreateComment(req,res,0);
+    // for updating comments, go to specific comment handler, we only need comment id
+    await handlerCreateComment(req,res,0);
 }

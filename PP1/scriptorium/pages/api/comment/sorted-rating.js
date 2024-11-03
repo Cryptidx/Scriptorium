@@ -1,4 +1,4 @@
-import prisma from "@/utils/db"
+import handlerSorting from "@/utils/comment/sorted-rating";
 
 // GET request 
 // not restricted 
@@ -12,10 +12,10 @@ import prisma from "@/utils/db"
 // is the one with the most upvoted 
 // we do upvoted in descending order, paginated 
 
-export default async function handler(req,res){
-    if(req.method !== "GET"){
-        return res.status(405).json({message: "method not allowed"});
-    }
-    
+/*
+GET COMMENTS SORTED IN DESCENDING ORDER OF UPVOTES
+*/
 
+export default async function handler(req,res){
+    await handlerSorting(req,res,1);
 }

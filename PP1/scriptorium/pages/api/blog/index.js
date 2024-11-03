@@ -1,6 +1,9 @@
 import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
 import processTags from "@/lib/helpers/create_tags";
+/*
+CREATE AND GET BLOG (FROM SET OF BLOGS)
+*/
 
 // create a blog 
 async function handlerCreate(req,res){
