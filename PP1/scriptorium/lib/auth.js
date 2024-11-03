@@ -1,15 +1,18 @@
 import jwt from 'jsonwebtoken';
 import prisma from './prisma'; 
 
-const SECRET_KEY = process.env.JWT_SECRET;
+const SECRET_KEY = process.env.JWT_SECRET_ACCESS;
 
 // Middleware to verify JWT and attach userId to the request
 export async function authMiddleware(req, res, { getFullUser = false } = {}) {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    res.status(401).json({ error: 'No token provided' });
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Unauthorized: No token provided.' });
     return null;
   }
+
+  const token = authHeader.split(' ')[1];
 
   try {
     // Verify the token to get the userId
