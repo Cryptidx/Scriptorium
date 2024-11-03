@@ -1,22 +1,44 @@
 import jwt from 'jsonwebtoken';
+import prisma from './prisma'; 
 
 const SECRET_KEY = process.env.JWT_SECRET;
 
 // Middleware to verify JWT and attach userId to the request
-export function authMiddleware(req, res, next) {
+export async function authMiddleware(req, res, { getFullUser = false } = {}) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    res.status(401).json({ error: 'No token provided' });
+    return null;
   }
 
   try {
+    // Verify the token to get the userId
     const decoded = jwt.verify(token, SECRET_KEY);
-    req.userId = decoded.userId; // Attach userId to request
-    next();
+    const userId = decoded.userId;
+
+    // If only userId is needed, attach it to req and return
+    if (!getFullUser) {
+      req.userId = userId;
+      return { userId };
+    }
+
+    // If the full user is needed, fetch it from the database
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(401).json({ error: 'User not found' });
+      return null;
+    }
+
+    // Attach full user object to req and return it
+    req.user = user;
+    return user;
+
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'Invalid or expired token' });
+    return null;
   }
 }
+
 
 // Generic middleware wrapper to perform custom checks
 export function performChecks(handler, checkFunction) {

@@ -22,14 +22,14 @@ model Template {
   language     String
   title        String
   explanation  String
-  tags         String?   // JSON field for tags, for SQLite
+  tags         String   // JSON field for tags, for SQLite
   blogs        Blog[]
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
 
-
+// ROLE TYPES: "USER", "SYS_ADMIN"
 
 model User {
   id          Int       @id @default(autoincrement())
@@ -38,7 +38,7 @@ model User {
   email       String    @unique
   password    String
   phoneNumber String 
-  role        String    @default("USER") // Store as a String instead of Enum
+  role        String    @default("USER") // Store as a String instead of Enum, 
   avatar      String    @default("uploads/default-avatar.png") // Default avatar path
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -95,4 +95,14 @@ model Comment{
   downvotes Int
 }
 
+model Report {
+  id           Int      @id @default(autoincrement())
+  contentId    Int      // ID of the reported content (Blog or Comment)
+  contentType  String   // Type of content: "BLOG" or "COMMENT"
+  explanation  String   // Additional explanation provided by the user
 
+  authorId     Int      // Foreign key to the User model for the reporting user
+  author       User     @relation(fields: [authorId], references: [id])
+
+  createdAt    DateTime @default(now()) // Timestamp of when the report was created
+}
