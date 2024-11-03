@@ -10,6 +10,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tag {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  blogs Blog[]  @relation("BlogTags")
+  templates Template[] @relation("TemplateTags")
+}
 
 model Template {
   id           Int       @id @default(autoincrement())
@@ -24,7 +30,7 @@ model Template {
   language     String
   title        String
   explanation  String
-  tag          String    // JSON field for tags
+  tag         Tag[]     @relation("TemplateTags") // Many-to-many relationship with Tag
 
   // Many-to-many relationship with blogs
   blogs        Blog[]    @relation("BlogTemplates")
@@ -58,7 +64,7 @@ model Blog {
   id          Int       @id @default(autoincrement())
   title       String
   description String
-  tag         String
+  tags        Tag[]     @relation("BlogTags")      // Many-to-many relationship with Tag
   templates   Template[] @relation("BlogTemplates")  // a blog can have many templates, or no templates
 
   flagged     Boolean    @default(false)
