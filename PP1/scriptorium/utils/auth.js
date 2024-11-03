@@ -1,69 +1,31 @@
-import bcrypt from "bcrypt"
-import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt";
+import { generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken } from "./token";
 
 const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS);
-const JWT_SECRET_REFRESH = process.env.JWT_SECRET_REFRESH;
-const JWT_SECRET_ACCESS = process.env.JWT_SECRET_ACCESS;
-const JWT_EXPIRES_IN_REFRESH = process.env.JWT_EXPIRES_IN_REFRESH;
-const JWT_EXPIRES_IN_ACCESS = process.env.JWT_EXPIRES_IN_ACCESS;
 
-
-export function setAccessToken(token) {
-    return localStorage.setItem('AccessToken', token)
+// Password hashing and comparison
+export async function hashPassword(password) {
+    return await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 }
 
-export function setRefreshToken(token) {
-    return localStorage.setItem('RefreshToken', token)
+export async function comparePassword(password, hash) {
+    return await bcrypt.compare(password, hash);
 }
 
-export function getAccessToken() {
-    return localStorage.getItem('AccessToken')
+// Generate access and refresh tokens for a user
+export function createAccessToken(payload) {
+    return generateAccessToken(payload);
 }
 
-export function getRefreshToken() {
-    return localStorage.getItem('RefreshToken')
+export function createRefreshToken(payload) {
+    return generateRefreshToken(payload);
 }
 
-export async function hashPassword(pwd){
-    
-    return await bcrypt.hash(pwd,BCRYPT_SALT_ROUNDS); 
+// Verify tokens
+export function validateAccessToken(token) {
+    return verifyAccessToken(token);
 }
 
-export async function comparePassword(pwd,hash){
-    return await bcrypt.compare(pwd,hash);
-}
-
-export function generateToken(obj,which){
-    // tokens can be generated from any obj 
-
-    
-    if(which == 0){
-        // generate access token
-        return jwt.sign(obj, JWT_SECRET_ACCESS, {expiresIn: JWT_EXPIRES_IN_ACCESS})
-    }
-    else{
-        return jwt.sign(obj, JWT_SECRET_REFRESH, {expiresIn: JWT_EXPIRES_IN_REFRESH})
-    }
-   
-}
-
-export function verifyToken(token, which){
-    if(!token){
-        // could throw exception
-        return null
-    }
-    try{
-        // will return json object which we generated the token from
-        if(which === 0){
-            //access
-            return jwt.verify(token,JWT_SECRET_ACCESS);
-        }
-        else{
-            return jwt.verify(token,JWT_SECRET_REFRESH);
-        }
-    }
-    
-    catch(err){
-        return null;
-    }
+export function validateRefreshToken(token) {
+    return verifyRefreshToken(token);
 }

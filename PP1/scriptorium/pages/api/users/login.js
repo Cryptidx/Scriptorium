@@ -2,7 +2,22 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 
-const SECRET_KEY = process.env.JWT_SECRET; // Use an environment variable for security
+const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET; 
+const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET; 
+
+function generateTokens(user) {
+  const accessToken = jwt.sign(
+    { userId: user.id, role: user.role },
+    ACCESS_TOKEN_SECRET,
+    { expiresIn: '15m' }
+  );
+  const refreshToken = jwt.sign(
+    { userId: user.id },
+    REFRESH_TOKEN_SECRET,
+    { expiresIn: '7d' }
+  );
+  return { accessToken, refreshToken };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -30,27 +45,24 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Generate a JWT with the user ID and role
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      SECRET_KEY,
-      { expiresIn: '1h' } // Token expires in 1 hour
-    );
+    // Generate a JWT tokens
+    const { accessToken, refreshToken } = generateTokens(user);
 
-    // Return the token in the response
+    // Return both tokens in the response
     res.status(200).json({
-      message: 'Login successful',
-      token,
-      user: {
+        message: 'Login successful',
+        accessToken,
+        refreshToken,
+        user: {
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-      },
+        },
     });
-  } catch (error) {
+    } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Login failed.' });
-  }
+    }
 }

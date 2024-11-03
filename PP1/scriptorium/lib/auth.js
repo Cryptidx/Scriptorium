@@ -51,7 +51,13 @@ export function performChecks(handler, checkFunction) {
   };
 }
 
-// Example check function for any authenticated user
+/*
+
+ lightweight check for any valid token. It verifies the token 
+ and attaches the userId to the request 
+ if the token is valid, but it doesn’t fetch full user details.
+
+*/
 export async function isAuthenticated(req, res) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
