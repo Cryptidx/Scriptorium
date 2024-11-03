@@ -55,7 +55,7 @@ model Blog{
   id Int @id @default(autoincrement())
   title String 
   description String
-  tag String
+  tags String
   // a blog can have many templates, or no templates
   templates Template[] 
 
@@ -70,8 +70,8 @@ model Blog{
 
   createdAt DateTime @default(now()) // sensibel
   comments Comment[]  // make sense
-  upvotes Int // make sense 
-  downvotes Int // make sense
+  upvotes Int @default(0)
+  downvotes Int @default(0)
 
 }
 
@@ -91,8 +91,8 @@ model Comment{
   parent      Comment?   @relation("Subcomments", fields: [parentId], references: [id])
   subcomments Comment[]  @relation("Subcomments")
 
-  upvotes Int
-  downvotes Int
+  upvotes Int @default(0)
+  downvotes Int @default(0)
 }
 
 model Report {
