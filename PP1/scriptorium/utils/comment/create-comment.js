@@ -12,11 +12,12 @@ export default async function handlerCreateComment(req,res,which){
         return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
     }
 
-    const { blog_id, comment_id } = req.query;
-    const commentId = parseInt(comment_id);
-    const blogId = parseInt(blog_id);
+    const { blogId, commentId } = req.query;
+    const blog_id = parseInt(blogId);
+    const comment_id = which === 1 ? parseInt(commentId) : null; 
+    
 
-    if (isNaN(commentId) || isNaN(blogId)) {
+    if (isNaN(blogId) || (which === 1 && isNaN(commentId))) {
         return res.status(400).json({ error: 'Invalid comment or blog ID' });
     }
 
@@ -41,16 +42,15 @@ export default async function handlerCreateComment(req,res,which){
 
     try {
         // Create the subcomment
-        const subcomment = await prisma.comment.create({
+        const comment = await prisma.comment.create({
             data: newData
         });
 
-        return res.status(201).json(subcomment);
+        return res.status(201).json(comment);
     } 
     
     catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Failed to create subcomment", error });
+        return res.status(500).json({ message: "Failed to create comment", error });
     }
 }
 

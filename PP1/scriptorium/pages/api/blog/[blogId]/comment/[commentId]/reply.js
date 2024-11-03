@@ -1,4 +1,3 @@
-import prisma from "@/utils/db"
 import handlerCreateComment from "@/utils/comment/create-comment";
 
 // export default async function handlerCreate(req,res){
@@ -56,7 +55,9 @@ export default async function handler(req,res){
 
     // how do we await?
 
-    return handlerCreateComment(req,res,1);
+    //post
+
+    await handlerCreateComment(req,res,1);
 }
 
 

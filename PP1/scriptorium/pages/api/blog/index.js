@@ -1,6 +1,9 @@
 import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
 
+/*
+CREATE AND GET BLOG (FROM SET OF BLOGS)
+*/
 
 // create a blog 
 async function handlerCreate(req,res){
@@ -17,7 +20,7 @@ async function handlerCreate(req,res){
         return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
     }
 
-    const {title, description, tags, templates} = req.body;
+    const {title, description, tag, templates} = req.body;
 
     if(!title || !description){
         // these are all mandatory fields 
@@ -26,12 +29,12 @@ async function handlerCreate(req,res){
 
     // hard assumption that tag and template are javascript arays
     // there has to be at least one thing in tags
-    if(!tags || tags.length == 0){
+    if(!tag || tag.length == 0){
         return res.status(400).json({message: "put in at least 1 tag"});
     }
     
     // we want our tags to be json lists
-    const tagsJson = JSON.stringify(tags);
+    const tagsJson = JSON.stringify(tag);
 
     // Format templates array for many-to-many relation
     const templateConnectArray = templates.map(templateId => ({
@@ -42,7 +45,7 @@ async function handlerCreate(req,res){
         data: {
         title: title,
         description: description,
-        tags: tagsJson,
+        tag: tagsJson,
         templates: {
             connect: templateConnectArray,  // Connect existing templates by ID
         },
@@ -65,13 +68,13 @@ async function handlerGet(req,res){
     }
 
     // Chat gpt: Please help with searching for items 
-    const { title, content, tags, templateId, page = 1, limit = 10 } = req.query;
-    const parsedTags = tags ? JSON.parse(tags) : null;
+    const { title, content, tag, templateId, page = 1, limit = 10 } = req.query;
+    const parsedTags = tag ? JSON.parse(tag) : null;
 
     const filters = { AND: [] };
     if (title) filters.AND.push({ title: { contains: title, mode: "insensitive" } });
     if (content) filters.AND.push({ description: { contains: content, mode: "insensitive" } });
-    if (parsedTags && parsedTags.length > 0) filters.AND.push({ tags: { contains: JSON.stringify(parsedTags) } });
+    if (parsedTags && parsedTags.length > 0) filters.AND.push({ tag: { contains: JSON.stringify(parsedTags) } });
     if (templateId) filters.AND.push({ templates: { some: { id: Number(templateId) } } });
 
     try {
