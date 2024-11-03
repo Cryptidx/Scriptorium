@@ -8,7 +8,7 @@ export async function authMiddleware(req, res, { getFullUser = false } = {}) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Unauthorized: No token provided.' });
+    res.status(401).json({ error: 'Unauthorized: No token provided. This action requires User login.' });
     return null;
   }
 
