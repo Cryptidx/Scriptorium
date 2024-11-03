@@ -21,30 +21,6 @@ function generateTokens(user) {
   return { accessToken, refreshToken };
 }
 
-/**
- * @api {post} /api/users/login Login a user
- * @apiName LoginUser
- * @apiGroup User
- * @apiVersion 1.0.0
- *
- * @apiBody {String} email User's email address.
- * @apiBody {String} password User's password.
- *
- * @apiSuccess {String} message Success message.
- * @apiSuccess {String} accessToken Access token for authenticated requests.
- * @apiSuccess {String} refreshToken Refresh token for generating new access tokens.
- * @apiSuccess {Object} user Logged-in user data.
- * @apiSuccess {Number} user.id User ID.
- * @apiSuccess {String} user.firstName First name.
- * @apiSuccess {String} user.lastName Last name.
- * @apiSuccess {String} user.email Email.
- * @apiSuccess {String} user.role Role of the user.
- *
- * @apiError (400) All fields are required.
- * @apiError (404) UserNotFound User with the specified email was not found.
- * @apiError (405) MethodNotAllowed Only POST requests are allowed.
- * @apiError (422) LoginFailed unexpected issues during login.
- */
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

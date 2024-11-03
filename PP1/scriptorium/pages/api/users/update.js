@@ -18,38 +18,9 @@ async function hashPassword(password) {
   return await bcrypt.hash(password, saltRounds);
 }
 
-/**
- * @api {put} /api/users/update Update user information
- * @apiName UpdateUser
- * @apiGroup User
- * @apiVersion 1.0.0
- *
- * @apiHeader {String} Authorization User's access token.
- *
- * @apiBody {String} [firstName] New first name.
- * @apiBody {String} [lastName] New last name.
- * @apiBody {String} [email] New email address.
- * @apiBody {String} [phoneNumber] New phone number.
- * @apiBody {String} [password] New password.
- * @apiBody {String} [confirmPassword] Confirmation for the new password.
- * @apiBody {String} [avatar] Avatar image path (selected from predefined list).
- *
- * @apiSuccess {String} message Success message.
- * @apiSuccess {Object} user Updated user data.
- * @apiSuccess {Number} user.id User ID.
- * @apiSuccess {String} user.firstName First name.
- * @apiSuccess {String} user.lastName Last name.
- * @apiSuccess {String} user.email Email.
- * @apiSuccess {String} user.phoneNumber Phone number.
- * @apiSuccess {String} user.avatar Updated avatar URL.
- *
- * @apiError (400) ValidationError Validation errors if fields are invalid.
- * @apiError (401) Unauthorized Invalid access token.
- * @apiError (405) MethodNotAllowed Only PUT requests are allowed.
- * @apiError (422) UpdateFailed unable to update user.
- */
-
 // Main handler logic for updating user details
+/* method ensures only the current user authenticated with their token
+can preform the update. */
 async function updateHandler(req, res) {
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
@@ -140,7 +111,7 @@ async function updateHandler(req, res) {
     res.status(200).json({
       message: 'User updated successfully',
       user: {
-        id: updatedUser.id,
+        id: userId,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         email: updatedUser.email,

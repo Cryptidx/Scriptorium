@@ -46,25 +46,7 @@ export default async function handler(req, res) {
     }
   }
   
-  /**
- * @api {post} /api/reports/report Submit a content report
- * @apiName SubmitReport
- * @apiGroup Report
- * @apiVersion 1.0.0
- *
- * @apiHeader {String} Authorization User's access token.
- *
- * @apiBody {Number} contentId ID of the content being reported (Blog or Comment).
- * @apiBody {String="BLOG","COMMENT"} contentType Type of the content being reported.
- * @apiBody {String} explanation Explanation for the report.
- *
- * @apiSuccess {String} message Success message.
- * @apiSuccess {Object} report Details of the created report.
- *
- * @apiError (400) InvalidContentType Invalid content type.
- * @apiError (404) ContentNotFound Content to report was not found.
- * @apiError (422) UnprocessableEntity Content could not be provided.
- */
+
 // Handler to allow users to create reports
 async function handleReportSubmission(req, res, userId) {
     try {
@@ -110,24 +92,7 @@ async function handleReportSubmission(req, res, userId) {
 }
 
 
-  /**
- * @api {get} /api/reports/report Get list of reports (Admin only)
- * @apiName GetReportListing
- * @apiGroup Report
- * @apiVersion 1.0.0
- *
- * @apiHeader {String} Authorization Admin's access token.
- *
- * @apiParam {Number} [page=1] Page number for pagination.
- * @apiParam {Number} [pageSize=10] Number of items per page.
- *
- * @apiSuccess {Object[]} data Array of reported content with counts.
- * @apiSuccess {Number} meta.totalCount Total number of reports.
- * @apiSuccess {Number} meta.totalPages Total pages.
- * @apiSuccess {Number} meta.currentPage Current page number.
- *
- * @apiError (422) UnprocessableEntity Content could not be provided.
- */
+
 async function handleReportListing(req, res) {
     const { page = 1, pageSize = 10 } = req.query;
     const skip = (page - 1) * pageSize;
@@ -212,24 +177,6 @@ async function handleReportListing(req, res) {
   
 
 
-  /**
- * @api {put} /api/reports/report Hide reported content (Admin only)
- * @apiName HideContent
- * @apiGroup Report
- * @apiVersion 1.0.0
- *
- * @apiHeader {String} Authorization Admin's access token.
- *
- * @apiBody {Number} contentId ID of the content to hide (Blog or Comment).
- * @apiBody {String="BLOG","COMMENT"} contentType Type of the content to hide.
- *
- * @apiSuccess {String} message Success message.
- * @apiSuccess {Object} content Updated content details.
- *
- * @apiError (400) InvalidContentType Invalid content type.
- * @apiError (404) ContentNotFound Content to hide was not found.
- * @apiError (422) UnprocessableEntity Content could not be hidden.
- */
 
   async function handleContentHiding(req, res) {
     try {
