@@ -1,6 +1,6 @@
 import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
-
+import { getReportsForUserContent } from "@/utils/comment-blog/find-report";
 /*
 CREATE AND GET BLOG (FROM SET OF BLOGS)
 */
@@ -14,11 +14,11 @@ async function handlerCreate(req,res){
     }
 
     // author of the blog
-    const author = authMiddleware(req, res);
-    if (!author) {
-        // could be null, cos we don't have a current user by jwt 
-        return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
-    }
+    //const author = await authMiddleware(req, res);
+    // if (!author) {
+    //     // could be null, cos we don't have a current user by jwt 
+    //     return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+    // }
 
     const {title, description, tag, templates} = req.body;
 
@@ -41,26 +41,45 @@ async function handlerCreate(req,res){
         id: templateId,
     }));
 
-    const blog = await prisma.blog.create({
-        data: {
-        title: title,
-        description: description,
-        tag: tagsJson,
-        templates: {
-            connect: templateConnectArray,  // Connect existing templates by ID
-        },
-        author: { connect: { id: author.id } },
-        },
-        // will comments be empty by default??????
-    });
 
-    // returns entire blog for now 
-    return res.status(200).json(blog);
+    try{
+        // if any of the awaits fail
+        const blog = await prisma.blog.create({
+            data: {
+            title: title,
+            description: description,
+            tag: tagsJson,
+            templates: {
+                connect: templateConnectArray,  // Connect existing templates by ID
+            },
+            author: { connect: { id: author.id } },
+            },
+        });
+
+
+        return res.status(200).json({blog});
+        
+    }
+
+    catch(error){
+        return res.status(422).json({ message: "Failed to retrieve blogs", error });
+    }
+    
 }
 
 
 // get blogs by their title, content, tags, and also the code templates 
 // paginated 
+
+// go through blog results, check if ivalid 
+// if author of blog is not auth user 
+// hide it 
+// if same user 
+// show everything, including reports 
+
+// how do i do that?
+
+
 async function handlerGet(req,res){
     // not restricted to auth users
     if(req.method !== "GET"){
@@ -68,6 +87,8 @@ async function handlerGet(req,res){
     }
 
     // Chat gpt: Please help with searching for items 
+
+    // TODO: check if this is dereferencing properly 
     const { title, content, tag, templateId, page = 1, limit = 10 } = req.query;
     const parsedTags = tag ? JSON.parse(tag) : null;
 
@@ -78,6 +99,9 @@ async function handlerGet(req,res){
     if (templateId) filters.AND.push({ templates: { some: { id: Number(templateId) } } });
 
     try {
+        const author = await authMiddleware(req, res);
+        const authorId = author ? author.id : null;
+
         const blogs = await prisma.blog.findMany({
             where: filters,
             skip: (page - 1) * limit,
@@ -88,9 +112,29 @@ async function handlerGet(req,res){
                 comments: true,
             },
         });
-        return res.status(200).json({ blogs, page, limit });
+
+
+        // need to check for emptiness
+        // if any of the await fails, we get erro 
+
+        const reportData = authorId ? await getReportsForUserContent(authorId, "BLOG") : {};
+
+        const enrichedBlogs = blogs.map(blog => {
+            const isAuthor = authorId && blog.authorId === authorId;
+            return {
+                ...blog,
+                reports: isAuthor ? reportData[blog.id] || [] : undefined,
+            };
+        });
+
+        // some of the blog will have report, 
+        // some will have report as undefined 
+        // for those where report is undefined, if they are also flagged
+        // do not show them 
+        
+        return res.status(200).json({blogs:enrichedBlogs, page, limit });
     } catch (error) {
-        return res.status(500).json({ message: "Failed to retrieve blogs", error });
+        return res.status(422).json({ message: "Failed to retrieve blogs", error });
     }
 
 

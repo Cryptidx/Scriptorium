@@ -39,7 +39,7 @@ async function handlerDelete(req,res){
     } 
 
     catch (error) {
-        return res.status(500).json({ error: 'Failed to delete blog' });
+        return res.status(422).json({ error: 'Failed to delete blog' });
     }
 
 }
@@ -52,6 +52,7 @@ async function handlerUpdate(req,res){
 
     const { id } = req.query;
     const blogId = parseInt(id);
+
     if (isNaN(blogId)) {
         return res.status(400).json({ error: 'Invalid blog ID' });
     }
@@ -85,7 +86,7 @@ async function handlerUpdate(req,res){
     } 
 
 
-    if (tags !== undefined){
+    if (tag !== undefined){
         // CHAT GPT 
         if (!Array.isArray(tag) || tag.length === 0 || tag.some(tag => typeof tag !== 'string' || tag.trim() === '')) {
             return res.status(400).json({ message: "Tags must be a non-empty array of non-empty strings" });
@@ -118,7 +119,7 @@ async function handlerUpdate(req,res){
     }
 
     catch(error){
-        return res.status(500).json({ message: "Failed to update blog post", error });
+        return res.status(422).json({ message: "Failed to update blog post", error });
     }
     
     // when it comes to editing comments, use other pathway 
@@ -128,11 +129,16 @@ async function handlerUpdate(req,res){
 
 export default async function handler(req, res) {
     // delete and update are restricted pathways 
-
-    const author = authMiddleware(req, res);
-    if (!author) {
-        // could be null, cos we don't have a current user by jwt 
-        return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+    try{
+        const author = await authMiddleware(req, res);
+        if (!author) {
+            // could be null, cos we don't have a current user by jwt 
+            return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+        }
+    }
+    
+    catch(error){
+        return res.status(422).json({ message: "Failed to find current user", error });
     }
 
     let method = req.method;
