@@ -47,6 +47,7 @@ export async function isAuthenticated(req, res) {
   }
 }
 
+
 /*
 
 so basically a middleware is a function that wraps 
