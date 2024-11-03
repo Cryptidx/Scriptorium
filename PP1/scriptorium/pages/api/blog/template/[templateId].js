@@ -51,8 +51,9 @@ export default async function handler(req, res) {
     // Return the found template
     return res.status(200).json(template);
 
-  } catch (error) {
-    console.error("Error fetching template:", error);
-    return res.status(500).json({ message: "Error fetching template", error });
+  } 
+  
+  catch (error) {
+    return res.status(422).json({ message: "Error fetching template", error });
   }
 }
