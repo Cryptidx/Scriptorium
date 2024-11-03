@@ -1,11 +1,16 @@
-import { fork } from 'child_process';
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
+import { authMiddleware } from "@/lib/auth";
 
 async function handlerDelete(req, res) {
     const { id } = req.query;
 
     if (req.method !== "DELETE"){
         return res.setHeader("Allow", ["DELETE"]).status(405).end("Method " + req.method + " Not Allowed");
+    }
+
+    const author = authMiddleware(req, res);
+    if (!author) {
+        return res.status(401).json({ message: "Unauthorized. Please log in to create code." });
     }
 
     const templateId = parseInt(id);
@@ -15,6 +20,14 @@ async function handlerDelete(req, res) {
     }
 
     try {
+        const user = await prisma.user.findUnique({
+            where: { id: author },
+          });
+      
+        if (!user) {
+            return res.status(404).json({error: "No user found with that ID"});
+        }
+
         const template = await prisma.template.findUnique({
           where: { id: templateId },
         });
@@ -22,7 +35,11 @@ async function handlerDelete(req, res) {
         if (!template) {
           return res.status(404).json({error: "No template found with that ID"});
         }
-    
+
+        if (user.role !== "ADMIN" || author !== template.ownerId) {
+          return res.status(403).json({error: "You do not have correct permission"});
+        }
+
         await prisma.template.delete({
           where: { id: templateId },
         });
@@ -50,6 +67,11 @@ async function handlerUpdate(req, res) {
     const { id } = req.query;
     const updates = req.body;
 
+    const author = authMiddleware(req, res);
+    if (!author) {
+        return res.status(401).json({ message: "Unauthorized. Please log in to create code." });
+    }
+
     if (req.method !== "PUT"){
         return res.setHeader("Allow", ["PUT"]).status(405).end("Method " + req.method + " Not Allowed");
     }
@@ -65,24 +87,45 @@ async function handlerUpdate(req, res) {
     }
 
     try {
+        const user = await prisma.user.findUnique({
+            where: { id: author },
+          });
+      
+        if (!user) {
+            return res.status(404).json({error: "No user found with that ID"});
+        }
+
         const template = await prisma.template.findUnique({
             where: { id: templateId },
           });
-
-        const { code, language, title, explanation, tag } = updates;
       
         if (!template) {
             return res.status(404).json({error: "No template found with that ID"});
         }
 
+        if (user.role !== "ADMIN" || author !== template.ownerId) {
+            return res.status(403).json({error: "You do not have correct permission"});
+        }
+
+        const { code, language, title, explanation, tags } = updates;
+
+        var processedTags = [];
+        if (tags && tags.length > 0) {
+            processedTags = await processTags(tags);
+        }
+
         const updatedRecord = await prisma.template.update({
             where: { id: templateId },
             data: {
-                code,
-                language,
-                title,
-                explanation,
-                tag,
+                ...(code && {code}),
+                ...(language && {language}),
+                ...(title && {title}),
+                ...(explanation && {explanation}),
+                ...(processedTags.length > 0 && { 
+                    tags: {
+                        set: processedTags,
+                    }
+                })
             }
         });
 
@@ -123,13 +166,8 @@ async function handlerGet(req, res) {
 }
 
 export default async function handler(req, res) {
-    const author = authMiddleware(req, res);
-    if (!author) {
-        return res.status(401).json({ message: "Unauthorized. Please log in to create code." });
-    }
-
     switch(req.method) {
-        case "DELETE":
+        case "DELETE": // MAKE SURE USER IS OWNER OR ADMIN
             await handlerDelete(req, res);
             return;
 

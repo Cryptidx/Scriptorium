@@ -1,4 +1,3 @@
-import prisma from '../../../lib/prisma'; // Adjust path as necessary
 const { runFile } = require('../../../lib/code-run');
 
 export default async function handler(req, res) {
