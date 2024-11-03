@@ -39,7 +39,8 @@ async function handlerDelete(req,res){
     } 
 
     catch (error) {
-        return res.status(422).json({ error: 'Failed to delete blog' });
+        console.error("Error deleting blog:", error);
+        return res.status(422).json({ message: "Unprocessable entity: Unable to delete the blog" });
     }
 
 }
@@ -119,7 +120,8 @@ async function handlerUpdate(req,res){
     }
 
     catch(error){
-        return res.status(422).json({ message: "Failed to update blog post", error });
+        console.error("Error updating blog:", error);
+        return res.status(422).json({ message: "Unprocessable entity: Unable to update the blog" });
     }
     
     // when it comes to editing comments, use other pathway 
