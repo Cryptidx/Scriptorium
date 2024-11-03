@@ -30,7 +30,7 @@ model Template {
   language     String
   title        String
   explanation  String
-  tag         Tag[]     @relation("TemplateTags") // Many-to-many relationship with Tag
+  tags         Tag[]     @relation("TemplateTags") // Many-to-many relationship with Tag
 
   // Many-to-many relationship with blogs
   blogs        Blog[]    @relation("BlogTemplates")
