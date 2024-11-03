@@ -46,7 +46,7 @@ async function handlerCreate(req,res){
                 }),
 
                 ...(processedTags.length > 0 && {
-                    blogs: {
+                    tags: {
                         connect: processedTags.map((id) => ({ id })),
                     }
                 }),

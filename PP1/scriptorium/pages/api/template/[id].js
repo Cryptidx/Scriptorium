@@ -37,7 +37,7 @@ async function handlerDelete(req, res) {
         }
 
         if (user.role !== "ADMIN" || author !== template.ownerId) {
-          return res.status(404).json({error: "You do not have correct permission"});
+          return res.status(403).json({error: "You do not have correct permission"});
         }
 
         await prisma.template.delete({
@@ -104,19 +104,28 @@ async function handlerUpdate(req, res) {
         }
 
         if (user.role !== "ADMIN" || author !== template.ownerId) {
-            return res.status(404).json({error: "You do not have correct permission"});
+            return res.status(403).json({error: "You do not have correct permission"});
         }
 
-        const { code, language, title, explanation, tag } = updates;
+        const { code, language, title, explanation, tags } = updates;
+
+        var processedTags = [];
+        if (tags && tags.length > 0) {
+            processedTags = await processTags(tags);
+        }
 
         const updatedRecord = await prisma.template.update({
             where: { id: templateId },
             data: {
-                code,
-                language,
-                title,
-                explanation,
-                tag,
+                ...(code && {code}),
+                ...(language && {language}),
+                ...(title && {title}),
+                ...(explanation && {explanation}),
+                ...(processedTags.length > 0 && { 
+                    tags: {
+                        set: processedTags,
+                    }
+                })
             }
         });
 
@@ -143,9 +152,6 @@ async function handlerGet(req, res) {
     try {
         const template = await prisma.template.findUnique({
             where: { id: templateId },
-            include: {
-                
-            }
           });
       
         if (!template) {
