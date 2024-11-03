@@ -138,8 +138,15 @@ async function handlerGet(req,res){
             skip: (page - 1) * limit,
             take: parseInt(limit),
             include: {  // might change up these includs 
-                author: true,
-                templates: true,
+                author: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        role: true
+                    }
+                },                templates: true,
                 comments: true,
                 tags: true,
             },
