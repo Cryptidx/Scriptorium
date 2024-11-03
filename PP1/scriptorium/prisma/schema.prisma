@@ -43,7 +43,7 @@ model User {
   password    String
   phoneNumber String
   role        String    @default("USER")
-  avatar      String    @default("uploads/default-avatar.png")
+  avatar      String    @default("/avatar_images/pfp5.png")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
