@@ -135,26 +135,30 @@ async function runFile(lang, code, stdin = []) {
             var commandOne = "gcc";
             var argsOne = [tempFile, "-o", "file"];
             
-            var commandTwo = "file.exe";
+            var commandTwo = process.platform === 'win32' ? 'file.exe' : './file';;
             var argsTwo = [];
 
             output = await compileRun(commandOne, argsOne, commandTwo, argsTwo, stdin);
 
+            var removeFile = process.platform === 'win32' ? 'file.exe' : 'file';;
+
             fs.unlinkSync(tempFile);
-            fs.unlinkSync("file.exe");
+            fs.unlinkSync(removeFile);
             return output;
 
         case "c++":
             var commandOne = "g++";
             var argsOne = [tempFile, "-o", "file"];
-            
-            var commandTwo = "file.exe";
+
+            var commandTwo = process.platform === 'win32' ? 'file.exe' : './file';;
             var argsTwo = [];
 
             output = await compileRun(commandOne, argsOne, commandTwo, argsTwo, stdin);
 
+            var removeFile = process.platform === 'win32' ? 'file.exe' : 'file';;
+
             fs.unlinkSync(tempFile);
-            fs.unlinkSync("file.exe");
+            fs.unlinkSync(removeFile);
             return output;
             
         default:
