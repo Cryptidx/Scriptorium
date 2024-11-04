@@ -124,56 +124,63 @@ export default async function handler(req,res){
     }
 
     try{
-        const author = await authMiddleware(req, res);
-        if (!author) {
-            // could be null, cos we don't have a current user by jwt 
-            return res.status(401).json({ message: "Unauthorized. Please log in to update a blog." });
+        const author = await authMiddleware(req, res, { getFullUser: true });
+
+        const commentId = req.query.commentId;
+        const comment_id = parseInt(commentId);
+
+        if (isNaN(comment_id)) {
+            return res.status(400).json({ error: 'Invalid comment ID' });
         }
-    }
 
-    catch(error){
-        return res.status(422).json({ message: "Failed to find current user", error });
-    }
-  
+        const comment = await prisma.comment.findUnique({
+            where: { id: comment_id},
+        });
 
-    const {commentId} = req.query.commentId;
-    const comment_id = parseInt(commentId);
-
-    if (isNaN(comment_id)) {
-        return res.status(400).json({ error: 'Invalid comment ID' });
-    }
-
-    
-    // would assume author is always current user (could be another auth user)
-    // i'm assuming user can't be changed
-    // things we could directly change
-
-    const {description,flagged, upvotes, downvotes} = req.body;
-    const updateData = {};
-
-    if (description !== undefined){
-        if(typeof description !== 'string' || description.trim() == ''){
-            return res.status(400).json({ message: "Description must be a non-empty string" });
+        if (!comment) {
+            return res.status(404).json({ error: 'comment not found' });
         }
-        updateData.description = description.trimEnd();
-    } 
 
-    if (flagged !== undefined){
-        if(typeof flagged !== 'boolean'){
-            return res.status(400).json({ message: "Flagged must be a boolean" });
+        if (!author || (author.role !== 'SYS_ADMIN' && author.id !== comment.authorId)) {
+            return res.status(403).json({ message: "Permission denied" });
         }
-        updateData.flagged = flagged;
-    } 
 
-    if (upvotes !== undefined) updateData.upvotes = upvotes;
-    if (downvotes !== undefined) updateData.downvotes = downvotes;
+        if (comment.flagged && author.role !== 'SYS_ADMIN') {
+            return res.status(403).json({ message: "Permission denied" });
+        }
 
 
-    if(Object.keys(updateData).length === 0){
-        return res.status(200).json({ message: "Nothing provided to update" });
-    }
+        // would assume author is always current user (could be another auth user)
+        // i'm assuming user can't be changed
+        // things we could directly change
 
-    try{
+        const {description,flagged,upvotes,downvotes} = req.body;
+        const updateData = {};
+
+        if (description !== undefined){
+            if(typeof description !== 'string' || description.trim() == ''){
+                return res.status(400).json({ message: "Description must be a non-empty string" });
+            }
+            updateData.description = description.trimEnd();
+        } 
+
+        
+
+        if (flagged !== undefined && author.role === 'SYS_ADMIN'){
+            if(typeof flagged !== 'boolean'){
+                return res.status(400).json({ message: "Flagged must be a boolean" });
+            }
+            updateData.flagged = flagged; 
+        } 
+
+        if (upvotes !== undefined) updateData.upvotes = upvotes;
+        if (downvotes !== undefined) updateData.downvotes = downvotes;
+
+
+        if(Object.keys(updateData).length === 0){
+            return res.status(200).json({ message: "Nothing provided to update" });
+        }
+
         const updatedComment = await prisma.comment.update({
             where: {id: comment_id},
             data : updateData,
@@ -181,9 +188,11 @@ export default async function handler(req,res){
 
         // can this return empty?
         return res.status(200).json(updatedComment);
+
     }
 
     catch(error){
         return res.status(422).json({ message: "Failed to update blog post", error });
     }
+
 }
