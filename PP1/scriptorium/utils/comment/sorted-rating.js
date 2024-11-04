@@ -1,5 +1,5 @@
 import prisma from "@/utils/db";
-
+import { getReportsForUserContent } from "@/comment-blog/find-report";
 // chat
 export default async function handlerSorting(req, res, which) {
     // GET request 
@@ -46,8 +46,8 @@ export default async function handlerSorting(req, res, which) {
         let newData;
         let totalCount;
 
-        const author = await authMiddleware(req, res);
-        const authorId = author ? author.id : null;
+        const authorId = await authMiddleware(req, res);
+        //const authorId = author ? author.id : null;
 
         if(which === 0){
             // get blogs 
