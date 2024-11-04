@@ -11,7 +11,6 @@ export default async function handler(req,res){
     // cos all we need is comment id tbh
 
     // authorized action
-
     if (req.method !== 'PUT') {
         return res.setHeader('Allow', ['PUT']).status(405).end(`Method ${method} Not Allowed`);
     }
