@@ -26,10 +26,6 @@ export default async function handlerSorting(req, res, which) {
     const limitInt = parseInt(limit);
     const skip = (pageInt - 1) * limitInt;
 
-    if (req.method !== "GET") {
-        return res.status(405).json({ message: "Method not allowed" });
-    }
-
     // only show valid stuff if i'm not the author 
     // else show everything if i'm the author 
 
@@ -44,12 +40,13 @@ export default async function handlerSorting(req, res, which) {
         // current usr 
 
         let data;
-        let reportData;
-        let newData;
+        let reportData = {};
+        let newData = [];
         let totalCount;
 
-        const authorId = await authMiddleware(req, res);
-        //const authorId = author ? author.id : null;
+        const author = await authMiddleware(req, res, { getFullUser: true });
+        const authorId = author ? author.id : null;
+        console.log(authorId);
 
         if(which === 0){
             // get blogs 
@@ -59,16 +56,33 @@ export default async function handlerSorting(req, res, which) {
                 take: limitInt,
             });
 
-            reportData = authorId ? await getReportsForUserContent(authorId, "BLOG") : {};
+            // find current user to see if they have any reported blogs
+            // so they can see the explanations, if they exist, fro being flagged
+            // If the user is authenticated, find flagged blogs authored by them
+            if (authorId!=null) {
+                const flaggedBlogIds = data
+                    .filter(blog => blog.flagged && blog.authorId === authorId)
+                    .map(blog => blog.id);
+                
+                    console.log(flaggedBlogIds);
 
-            newData = data.map(datum => {
-                const isAuthor = authorId && datum.authorId === authorId;
+                // Fetch explanations for flagged blogs authored by the user
+                if (flaggedBlogIds.length > 0) {
+                    reportData = await getReportsForUserContent(authorId, "BLOG", flaggedBlogIds);
+                }
+            }
+
+            console.log(reportData);
+    
+            // Map over blogs, attach reports if user is the author of flagged blogs
+            newData = data.map(blog => {
+                const isAuthorOfFlagged = blog.flagged && blog.authorId === authorId;
                 return {
-                    ...datum,
-                    reports: isAuthor ? reportData[datum.id] || [] : undefined,
+                    ...blog,
+                    reports: isAuthorOfFlagged ? reportData[blog.id] || [] : undefined,
                 };
             });
-
+            
             totalCount = await prisma.blog.count();
         }
 
@@ -137,7 +151,7 @@ export default async function handlerSorting(req, res, which) {
     } 
     
     catch (error) {
-        console.log(error);
+        console.error("Error fetching sorted blogs:", error);
         return res.status(422).json({ message: "Failed to get sorted blogs or comments" });
     }
 }

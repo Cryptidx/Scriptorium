@@ -1,20 +1,29 @@
-import prisma from "@/utils/db"
+import prisma from "@/utils/db";
 
-export async function getReportsForUserContent(userId, contentType) {
-    if (!userId) return {};  // Return an empty object if there's no user ID
+export async function getReportsForUserContent(userId, contentType, contentIds) {
+    // Log input parameters to confirm they’re being passed correctly
+    console.log("getReportsForUserContent - userId:", userId);
+    console.log("getReportsForUserContent - contentType:", contentType);
+    console.log("getReportsForUserContent - contentIds:", contentIds);
 
-    try{
+    if (!userId || !Array.isArray(contentIds) || contentIds.length === 0) {
+        console.log("Invalid input: userId or contentIds missing or empty");
+        return {};  // Return an empty object if there's no user ID or content IDs
+    }
+
+    try {
         const reports = await prisma.report.findMany({
             where: {
                 authorId: userId,
-                contentType: contentType, // Filter by content type (BLOG or COMMENT)
+                contentType: contentType,
+                contentId: { in: contentIds }, // Filter by the provided content IDs
             },
             select: {
                 contentId: true,
                 explanation: true,
             },
         });
-    
+
         // Organize report explanations by content ID for easy lookup
         const reportData = reports.reduce((acc, report) => {
             if (!acc[report.contentId]) {
@@ -23,11 +32,10 @@ export async function getReportsForUserContent(userId, contentType) {
             acc[report.contentId].push(report.explanation);
             return acc;
         }, {});
-    
-        return reportData;
-    }
 
-    catch(error){
-        return res.status(422).json({ message: "Failed to get reports", error });
+        return reportData;
+    } catch (error) {
+        console.error("Error fetching reports:", error);
+        return {}; // Return an empty object as needed on error
     }
 }
