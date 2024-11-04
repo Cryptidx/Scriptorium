@@ -1,4 +1,7 @@
 import prisma from "@/utils/db"
+import processTags from "@/lib/helpers/create_tags";
+import { authMiddleware } from "@/lib/auth";
+
 
 /*
 DELETE AND UPDATE BLOG FOUND BY BLOG ID
@@ -16,12 +19,12 @@ async function handlerDelete(req,res){
 
     const blogId = parseInt(id);
 
-    if (isNaN(bookId)) {
-        return res.status(400).json({ error: 'Invalid book ID' });
+    if (isNaN(blogId)) {
+        return res.status(400).json({ error: 'Invalid blog ID' });
     }
 
     try {
-        // Check if the book exists
+        // Check if the blog exists
         const blog = await prisma.blog.findUnique({
           where: { id: blogId },
         });
@@ -29,8 +32,14 @@ async function handlerDelete(req,res){
         if (!blog) {
           return res.status(404).json({ error: 'Blog not found' });
         }
+
+        // Check permissions
+        const author = await authMiddleware(req, res, { getFullUser: true });
+        if (!author || (author.role !== 'SYS_ADMIN' && author.id !== blog.authorId)) {
+            return res.status(403).json({ message: "Permission denied" });
+        }
     
-        // Delete the book
+        // Delete the blog
         await prisma.blog.delete({
           where: { id: blogId },
         });
@@ -57,18 +66,10 @@ async function handlerUpdate(req,res){
         return res.status(400).json({ error: 'Invalid blog ID' });
     }
 
-
-    // we'd want to edit (like change directly)
-    // title 
-    // description
-    // tag
-    // flagged attribute 
-    // upvotes
-    // downvotes
-
-    const {title, description, tag, flagged, upvotes, downvotes} = req.body;
+    const {title, description, tags, upvotes, downvotes} = req.body;
     const updateData = {};
 
+    // Validate title and description if provided
     if (title !== undefined){
         if(typeof title !== 'string' || title.trim() == ''){
             return res.status(400).json({ message: "Title must be a non-empty string" });
@@ -76,7 +77,6 @@ async function handlerUpdate(req,res){
 
         updateData.title = title.trimEnd();
     } 
-
 
     if (description !== undefined){
         if(typeof description !== 'string' || description.trim() == ''){
@@ -86,21 +86,21 @@ async function handlerUpdate(req,res){
     } 
 
 
-    if (tags !== undefined){
-        // CHAT GPT 
-        if (!Array.isArray(tag) || tag.length === 0 || tag.some(tag => typeof tag !== 'string' || tag.trim() === '')) {
+    // Process tags if provided
+    if (tags !== undefined) {
+        if (!Array.isArray(tags) || tags.length === 0 || tags.some(tag => typeof tag !== 'string' || tag.trim() === '')) {
             return res.status(400).json({ message: "Tags must be a non-empty array of non-empty strings" });
         }
-        updateData.tags = JSON.stringify(tag.map(tag => tag.trim()));  // Ensure tags are JSON-formatted
-    } 
 
-
-    if (flagged !== undefined){
-        if(typeof flagged !== 'boolean'){
-            return res.status(400).json({ message: "Flagged must be a boolean" });
+        try {
+            // Use processTags to ensure tags exist and get connect array
+            const tagConnectArray = await processTags(tags);
+            updateData.tags = { set: tagConnectArray };  // Use set to update tags
+        } catch (error) {
+            console.error("Error processing tags:", error);
+            return res.status(422).json({ message: "Unprocessable entity: Unable to process tags" });
         }
-        updateData.flagged = flagged;
-    } 
+    }
 
     if (upvotes !== undefined) updateData.upvotes = upvotes;
     if (downvotes !== undefined) updateData.downvotes = downvotes;
@@ -110,12 +110,27 @@ async function handlerUpdate(req,res){
     }
     
     try{
+        const blog = await prisma.blog.findUnique({
+            where: { id: blogId },
+        });
+
+        if (!blog) {
+            return res.status(404).json({ error: 'Blog not found' });
+        }
+
+        // Check permissions
+        const author = await authMiddleware(req, res, { getFullUser: true });
+        if (!author || (author.role !== 'SYS_ADMIN' && author.id !== blog.authorId)) {
+            return res.status(403).json({ message: "Permission denied" });
+        }
+
         const updatedBlog = await prisma.blog.update({
             where: {id: blogId},
             data : updateData,
-        })
+            include: { tags: true, templates: true },
+        });
 
-        return res.status(200).json(updatedBlog);
+        return res.status(200).json({message: "Blog updated successfully.", blog: updatedBlog });
     }
 
     catch(error){
@@ -124,7 +139,7 @@ async function handlerUpdate(req,res){
     }
     
     // when it comes to editing comments, use other pathway 
-    // when it comes to editing the template links, another pathway
+    // when it comes to editing the template links, other pathway
 }
 
 
