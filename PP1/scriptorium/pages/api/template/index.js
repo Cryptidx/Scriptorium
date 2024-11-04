@@ -29,6 +29,10 @@ async function handlerCreate(req,res){
     if (tags && tags.length > 0) {
         processedTags = await processTags(tags);
     }
+
+    if (processTags.length < 1) {
+        return res.status(400).json({message: "fill in provided fields"});
+    }
     
     try {
         const template = await prisma.template.create({
