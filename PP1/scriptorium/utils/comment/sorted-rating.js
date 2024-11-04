@@ -41,8 +41,9 @@ export default async function handlerSorting(req, res, which) {
         let newData;
         let totalCount;
 
-        const author = await authMiddleware(req, res);
-        const authorId = author ? author.id : null;
+        // i just need the id 
+        const authorId = await authMiddleware(req, res);
+        // const authorId = author ? author.id : null;
 
         if(which === 0){
             // get blogs 
