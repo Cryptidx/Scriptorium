@@ -186,7 +186,7 @@ export default async function handler(req,res){
             data : updateData,
         })
 
-        // can this return empty?
+        // can this return empty? no cos i checked its existence before
         return res.status(200).json(updatedComment);
 
     }
