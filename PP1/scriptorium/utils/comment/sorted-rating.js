@@ -1,6 +1,4 @@
 import prisma from "@/utils/db";
-import { authMiddleware } from "@/lib/auth";
-import {getReportsForUserContent} from "../comment-blog/find-report";
 
 // chat
 export default async function handlerSorting(req, res, which) {
@@ -48,7 +46,7 @@ export default async function handlerSorting(req, res, which) {
         let newData;
         let totalCount;
 
-        const author = await authMiddleware(req, res, { getFullUser: true });
+        const author = await authMiddleware(req, res);
         const authorId = author ? author.id : null;
 
         if(which === 0){
