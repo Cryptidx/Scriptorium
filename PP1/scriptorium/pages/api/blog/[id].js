@@ -106,7 +106,7 @@ async function handlerUpdate(req,res){
     if (upvotes !== undefined) updateData.upvotes = upvotes;
     if (downvotes !== undefined) updateData.downvotes = downvotes;
 
-    if(Object.keys(updateData).length === 0){
+    if(!title && !description && !tags && !flagged && !upvotes && !downvotes){
         return res.status(200).json({ message: "Nothing provided to update" });
     }
     
