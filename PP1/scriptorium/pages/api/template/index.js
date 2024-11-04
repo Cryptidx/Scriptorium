@@ -88,10 +88,29 @@ async function handlerGet(req,res){
 
     if (tags) {
         var parseTags = tags.split(',');
-        parseTags.every(tag => tag !== "");
+        if (!parseTags.every(tag => tag !== "")) {
+            return res.status(400).json({message: "Invalid tags passed"});
+        }
 
         if (parseTags && parseTags.length > 0) {
             processedTags = await processTags(parseTags);
+        }
+    }
+
+    var processedBlogs = [];
+    
+    if (blogs) {
+        var parsedBlogs = blogs.split(',');
+        if (!parsedBlogs.every(blog => blog !== "")) {
+            return res.status(400).json({message: "Invalid blogs passed"});
+        }
+
+        if (parsedBlogs && parsedBlogs.length > 0) {
+            processedBlogs = parsedBlogs.map(str => parseInt(str));
+        }
+
+        if (!processedBlogs.every(blog => !isNaN(blog))) {
+            return res.status(400).json({message: "Invalid blogs passed"});
         }
     }
 
@@ -103,7 +122,7 @@ async function handlerGet(req,res){
     if (language) {filter.push({ language: { contains: language } });}
     if (explanation) {filter.push({ explanation: { contains: explanation } });}
     if (title) {filter.push({ title: { contains: title } });}
-    if (blogs && blogs.length > 0) { blogs.forEach(blogId => {filter.push({ blogs: { some: { id: blogId }  } })}); }
+    if (processedBlogs && processedBlogs.length > 0) { processedBlogs.forEach(blogId => {filter.push({ blogs: { some: { id: blogId }  } })}); }
     if (processedTags && processedTags.length > 0) { processedTags.forEach(tag => {filter.push({ tags: { some: { id: tag.id }  } })}); }
 
     var numPage = parseInt(page);
