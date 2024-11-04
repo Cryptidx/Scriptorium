@@ -67,7 +67,7 @@ async function handlerUpdate(req,res){
         return res.status(400).json({ error: 'Invalid blog ID' });
     }
 
-    const {title, description, tags, upvotes, downvotes} = req.body;
+    const {title, description, tags, flagged, upvotes, downvotes} = req.body;
     const updateData = {};
 
     // Validate title and description if provided
@@ -129,6 +129,13 @@ async function handlerUpdate(req,res){
         // if flagged, author cannot edit the blog
         if (blog.flagged && user.role !== 'SYS_ADMIN') {
             return res.status(403).json({ message: "Permission denied" });
+        }
+
+        if(flagged!== undefined && user.role === 'SYS_ADMIN'){
+            if(typeof flagged !== 'boolean'){
+                return res.status(400).json({ message: "Flagged must be a boolean value" });
+            } 
+            updateData.flagged = flagged;
         }
 
         const updatedBlog = await prisma.blog.update({
