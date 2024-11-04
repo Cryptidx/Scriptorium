@@ -30,7 +30,7 @@ async function handlerCreate(req,res){
         processedTags = await processTags(tags);
     }
 
-    if (processTags.length < 1) {
+    if (processedTags.length === 0) {
         return res.status(400).json({message: "fill in provided fields"});
     }
     
