@@ -35,6 +35,23 @@ async function updateHandler(req, res) {
   const { firstName, lastName, password, confirmPassword, email, phoneNumber, avatar } = req.body;
   let updates = {};
 
+
+    // Helper function to check if a variable is a non-empty string
+    const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
+
+    // Validation checks
+    if (
+        (firstName !== undefined && !isNonEmptyString(firstName)) ||
+        (lastName !== undefined && !isNonEmptyString(lastName)) ||
+        (password !== undefined && !isNonEmptyString(password)) ||
+        (confirmPassword !== undefined && !isNonEmptyString(confirmPassword)) ||
+        (email !== undefined && !isNonEmptyString(email)) ||
+        (phoneNumber !== undefined && !isNonEmptyString(phoneNumber)) ||
+        (avatar !== undefined && !isNonEmptyString(avatar))
+    ) {
+        return res.status(400).json({ message: "All fields must be non-empty strings if they are provided." });
+    }
+
   // Check if at least one field is provided
   const hasUpdateField = [
     firstName, 
