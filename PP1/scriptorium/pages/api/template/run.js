@@ -1,7 +1,7 @@
 const { runFile } = require('../../../lib/code-run');
 
 export default async function handler(req, res) {
-    if (req.method !== "POST") {
+    if (req.method !== "GET") {
         return res.status(405).json({ error: "must use POST call"} );
     }
 
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { status, output, error } = await runFile(lang, code, inputs);
+        const [ status, output, error ] = await runFile(lang, code, inputs);
 
         if (status === -2 ) {
             return res.status(400).json({ error: 'invalid language sent' });
@@ -27,6 +27,7 @@ export default async function handler(req, res) {
         } else {
             return res.status(422).json( {
                 status: 'fail',
+                output: output,
                 error: error
             })
         }
