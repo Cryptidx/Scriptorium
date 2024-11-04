@@ -1,5 +1,6 @@
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 import { authMiddleware } from "@/lib/auth";
+import processTags from "@/lib/helpers/create_tags";
 
 async function handlerDelete(req, res) {
     const { id } = req.query;
@@ -8,7 +9,7 @@ async function handlerDelete(req, res) {
         return res.setHeader("Allow", ["DELETE"]).status(405).end("Method " + req.method + " Not Allowed");
     }
 
-    const author = authMiddleware(req, res);
+    const author = await authMiddleware(req, res, { getFullUser: true });
     if (!author) {
         return res.status(401).json({ message: "Unauthorized. Please log in to create code." });
     }
@@ -21,7 +22,7 @@ async function handlerDelete(req, res) {
 
     try {
         const user = await prisma.user.findUnique({
-            where: { id: author },
+            where: { id: author.id },
           });
       
         if (!user) {
@@ -36,7 +37,7 @@ async function handlerDelete(req, res) {
           return res.status(404).json({error: "No template found with that ID"});
         }
 
-        if (user.role !== "ADMIN" || author !== template.ownerId) {
+        if (user.role !== "ADMIN" || author.id !== template.ownerId) {
           return res.status(403).json({error: "You do not have correct permission"});
         }
 
@@ -53,7 +54,7 @@ async function handlerDelete(req, res) {
 }
 
 function validateAttributes(attributes) {
-    const allowedAttributes = ["code", "language", "title", "explanation", "tag"];
+    const allowedAttributes = ["code", "language", "title", "explanation", "tags", "blogs"];
 
     for (let key in attributes) {
         if (!allowedAttributes.includes(key)) {
@@ -67,7 +68,7 @@ async function handlerUpdate(req, res) {
     const { id } = req.query;
     const updates = req.body;
 
-    const author = authMiddleware(req, res);
+    const author = await authMiddleware(req, res, { getFullUser: true });
     if (!author) {
         return res.status(401).json({ message: "Unauthorized. Please log in to create code." });
     }
@@ -88,8 +89,8 @@ async function handlerUpdate(req, res) {
 
     try {
         const user = await prisma.user.findUnique({
-            where: { id: author },
-          });
+            where: { id: author.id },
+        });
       
         if (!user) {
             return res.status(404).json({error: "No user found with that ID"});
@@ -103,11 +104,11 @@ async function handlerUpdate(req, res) {
             return res.status(404).json({error: "No template found with that ID"});
         }
 
-        if (user.role !== "ADMIN" || author !== template.ownerId) {
+        if (user.role !== "ADMIN" && author.id !== template.ownerId) {
             return res.status(403).json({error: "You do not have correct permission"});
         }
 
-        const { code, language, title, explanation, tags } = updates;
+        const { code, language, title, explanation, tags, blogs } = updates;
 
         var processedTags = [];
         if (tags && tags.length > 0) {
@@ -121,11 +122,21 @@ async function handlerUpdate(req, res) {
                 ...(language && {language}),
                 ...(title && {title}),
                 ...(explanation && {explanation}),
-                ...(processedTags.length > 0 && { 
+                ...(processedTags && processedTags.length > 0 && { 
                     tags: {
                         set: processedTags,
                     }
+                }),
+                
+                ...(blogs && blogs.length > 0 && {
+                    blogs: {
+                        set: blogs.map((id) => ({ id })),
+                    }
                 })
+            },
+            include: {
+                tags: true,
+                blogs: true
             }
         });
 
@@ -152,6 +163,10 @@ async function handlerGet(req, res) {
     try {
         const template = await prisma.template.findUnique({
             where: { id: templateId },
+            include: {
+                blogs: true,
+                tags: true
+            }
           });
       
         if (!template) {
@@ -167,7 +182,7 @@ async function handlerGet(req, res) {
 
 export default async function handler(req, res) {
     switch(req.method) {
-        case "DELETE": // MAKE SURE USER IS OWNER OR ADMIN
+        case "DELETE":
             await handlerDelete(req, res);
             return;
 

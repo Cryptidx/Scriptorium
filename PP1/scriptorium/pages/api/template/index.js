@@ -11,7 +11,7 @@ async function handlerCreate(req,res){
     }
 
     // author of the blog
-    const author = authMiddleware(req, res);
+    const author = await authMiddleware(req, res, { getFullUser: true });
     if (!author) {
         // could be null, cos we don't have a current user by jwt 
         return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
@@ -25,6 +25,7 @@ async function handlerCreate(req,res){
     }
     
     var processedTags = [];
+
     if (tags && tags.length > 0) {
         processedTags = await processTags(tags);
     }
@@ -39,18 +40,23 @@ async function handlerCreate(req,res){
                 explanation,
                 ...(forkedFromId && { forkedFromId }),
     
-                ...(blogs.length > 0 && {
+                ...(blogs && blogs.length > 0 && {
                     blogs: {
                         connect: blogs.map((id) => ({ id })),
                     }
                 }),
 
-                ...(processedTags.length > 0 && {
+                ...(processedTags && processedTags.length > 0 && {
                     tags: {
-                        connect: processedTags.map((id) => ({ id })),
+                        connect: processedTags,
                     }
                 }),
             },
+
+            include: {
+                blogs: true,
+                tags: true
+            }
         });
     
         // returns entire blog for now 
@@ -75,20 +81,26 @@ async function handlerGet(req,res){
     var numForkedFromId = parseInt(forkedFromId);
 
     var processedTags = [];
-    if (tags && tags.length > 0) {
-        processedTags = await processTags(tags);
+
+    if (tags) {
+        var parseTags = tags.split(',');
+        parseTags.every(tag => tag !== "");
+
+        if (parseTags && parseTags.length > 0) {
+            processedTags = await processTags(parseTags);
+        }
     }
 
     const filter = [];
 
     if (!isNaN(numForkedFromId)) { filter.push({ forkedFromId: numForkedFromId });}
 
-    if (code) {filter.push({ code: { contains: code, mode: "insensitive" } });}
-    if (language) {filter.push({ language: { contains: language, mode: "insensitive" } });}
-    if (explanation) {filter.push({ explanation: { contains: explanation, mode: "insensitive" } });}
-    if (title) {filter.push({ title: { contains: title, mode: "insensitive" } });}
+    if (code) {filter.push({ code: { contains: code } });}
+    if (language) {filter.push({ language: { contains: language } });}
+    if (explanation) {filter.push({ explanation: { contains: explanation } });}
+    if (title) {filter.push({ title: { contains: title } });}
     if (blogs && blogs.length > 0) { blogs.forEach(blogId => {filter.push({ blogs: { some: { id: blogId }  } })}); }
-    if (processedTags && processedTags.length > 0) { processedTags.forEach(tagId => {filter.push({ tags: { some: { id: tagId }  } })}); }
+    if (processedTags && processedTags.length > 0) { processedTags.forEach(tag => {filter.push({ tags: { some: { id: tag.id }  } })}); }
 
     var numPage = parseInt(page);
     if (isNaN(page)) {
@@ -101,23 +113,15 @@ async function handlerGet(req,res){
     }
 
     try {
-        const templates = await prisma.blog.findMany({
+        const templates = await prisma.template.findMany({
             where: {
                 AND: filter,
             },
             skip: (numPage - 1) * numLimit,
             take: numLimit,
             include: {
-                owner: true,
-                foredFrom: true,
-                forkedCopies: true,
-                code: true,
-                language: true,
-                title: true,
-                explanation: true,
                 blogs: true,
-                createdAt: true,
-                updatedAt: true,
+                tags: true,
             },
         });
         return res.status(200).json({ templates, numPage, numLimit });
