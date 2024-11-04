@@ -24,12 +24,7 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Forbidden: Permission denied.' });
         }
         return await handleReportListing(req, res);
-      } /*else if (method === 'PUT') {
-        if (!isAdmin) {
-          return res.status(403).json({ error: 'Forbidden: Permission denied.' });
-        }
-        return await handleContentHiding(req, res);
-      } */else {
+      } else {
         return res.status(405).json({ error: `Method ${method} Not Allowed` });
       }
     } catch (error) {

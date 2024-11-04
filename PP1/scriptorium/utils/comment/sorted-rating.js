@@ -1,4 +1,6 @@
 import prisma from "@/utils/db";
+import { authMiddleware } from "@/lib/auth";
+import {getReportsForUserContent} from "../comment-blog/find-report";
 
 // chat
 export default async function handlerSorting(req, res, which) {
@@ -7,12 +9,17 @@ export default async function handlerSorting(req, res, which) {
     // 0 blogs 
     // 1 comments 
 
+    // Only allow GET requests
+    if (req.method !== "GET") {
+        return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+    }
+
     // get list of blogs based on rating, descending, basd on upvotes
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
 
     // would be null for top level function, cos its directly under blogs
-    const blogId = req.params.blogId? parseInt(req.params.blogId, 10) : null;
+    const blogId = req.query.blogId ? parseInt(req.query.blogId, 10) : null;
 
     // Convert page and limit to integers and calculate skip
     const pageInt = parseInt(page);
@@ -41,7 +48,7 @@ export default async function handlerSorting(req, res, which) {
         let newData;
         let totalCount;
 
-        const author = await authMiddleware(req, res);
+        const author = await authMiddleware(req, res, { getFullUser: true });
         const authorId = author ? author.id : null;
 
         if(which === 0){
@@ -55,7 +62,7 @@ export default async function handlerSorting(req, res, which) {
             reportData = authorId ? await getReportsForUserContent(authorId, "BLOG") : {};
 
             newData = data.map(datum => {
-                const isAuthor = userId && datum.authorId === authorId;
+                const isAuthor = authorId && datum.authorId === authorId;
                 return {
                     ...datum,
                     reports: isAuthor ? reportData[datum.id] || [] : undefined,
@@ -99,7 +106,7 @@ export default async function handlerSorting(req, res, which) {
             reportData = authorId ? await getReportsForUserContent(authorId, "COMMENT") : {};
 
             newData = data.map(datum => {
-                const isAuthor = userId && datum.authorId === authorId;
+                const isAuthor = authorId && datum.authorId === authorId;
                 return {
                     ...datum,
                     reports: isAuthor ? reportData[datum.id] || [] : undefined,
@@ -111,7 +118,6 @@ export default async function handlerSorting(req, res, which) {
               });
         }
      
-          
 
         return res.status(200).json({
         data: newData,
@@ -125,6 +131,7 @@ export default async function handlerSorting(req, res, which) {
     } 
     
     catch (error) {
+        console.log(error);
         return res.status(422).json({ message: "Failed to get sorted blogs or comments" });
     }
 }
