@@ -1,11 +1,12 @@
 import prisma from "@/utils/db"
+import { authMiddleware } from "@/lib/auth";
 
 async function handlerDelete(req, res) {
     if (req.method !== "DELETE") {
         return res.status(405).json({ message: "Method not allowed" });
     }
 
-    const blogId = parseInt(req.query.blogId);
+    const blogId = parseInt(req.query.id);
     const templateId = parseInt(req.query.templateId);
 
     // Validate IDs
@@ -16,18 +17,18 @@ async function handlerDelete(req, res) {
     try {
         // Fetch the blog along with its templatesW
         const template = await prisma.template.findUnique({
-        where: { id: templateId }
+            where: { id: templateId }
         });
 
         if (!template) {
-        return res.status(404).json({ error: "Not a valid template ID" })
+            return res.status(404).json({ error: "Not a valid template ID" })
         }
 
         const updatedBlog = await prisma.blog.update({
         where: { id: blogId },
         data: {
             templates: {
-            disconnect: {id: templateId},
+            disconnect: [{id: template.id}],
             }
         }, 
         include: {
@@ -48,7 +49,7 @@ async function handlerUpdate(req, res) {
         return res.status(405).json({ message: "Method not allowed" });
     }
 
-    const blogId = parseInt(req.query.blogId);
+    const blogId = parseInt(req.query.id);
     const templateId = parseInt(req.query.templateId);
 
     // Validate IDs
@@ -63,14 +64,14 @@ async function handlerUpdate(req, res) {
         });
 
         if (!template) {
-        return res.status(404).json({ error: "Not a valid template ID" })
+            return res.status(404).json({ error: "Not a valid template ID" })
         }
 
         const updatedBlog = await prisma.blog.update({
         where: { id: blogId },
         data: {
             templates: {
-            connect: {id: template},
+            connect: {id: template.id},
             }
         }, 
         include: {
@@ -87,6 +88,11 @@ async function handlerUpdate(req, res) {
 }
 
 export default async function handler(req, res) {
+    const author = await authMiddleware(req, res);
+    if (!author) {
+        return res.status(401).json({ message: "Unauthorized. Please log in to create code." });
+    }
+
     switch(req.method) {
         case "DELETE": // MAKE SURE USER IS OWNER OR ADMIN
             await handlerDelete(req, res);

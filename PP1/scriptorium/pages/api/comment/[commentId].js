@@ -45,7 +45,7 @@ export default async function handler(req,res){
         }
 
 
-        const {description,flagged,upvotes,downvotes} = req.body;
+        const {description,upvotes,downvotes,flagged} = req.body;
         const updateData = {};
 
         if (description !== undefined){
