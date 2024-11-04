@@ -37,7 +37,7 @@ async function handlerDelete(req, res) {
           return res.status(404).json({error: "No template found with that ID"});
         }
 
-        if (user.role !== "ADMIN" || author.id !== template.ownerId) {
+        if (user.role !== "ADMIN" && author.id !== template.ownerId) {
           return res.status(403).json({error: "You do not have correct permission"});
         }
 
