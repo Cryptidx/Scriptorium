@@ -1,6 +1,7 @@
 import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
 import processTags from "@/lib/helpers/create_tags";
+import { getReportsForUserContent } from "@/utils/comment-blog/find-report";
 /*
 CREATE AND GET BLOG (FROM SET OF BLOGS)
 */
@@ -98,6 +99,16 @@ async function handlerCreate(req,res){
 
 // get blogs by their title, content, tags, and also the code templates 
 // paginated 
+
+// go through blog results, check if ivalid 
+// if author of blog is not auth user 
+// hide it 
+// if same user 
+// show everything, including reports 
+
+// how do i do that?
+
+
 async function handlerGet(req,res){
     // not restricted to auth users
     if(req.method !== "GET"){
@@ -105,6 +116,7 @@ async function handlerGet(req,res){
     }
 
     // Chat gpt: Please help with searching for items 
+    // TODO: check if this is dereferencing properly 
     const { title, content, tags, templateId, page = 1, limit = 10 } = req.query;
 
     // Check that title, content, and templateId are either undefined or strings
@@ -133,6 +145,9 @@ async function handlerGet(req,res){
     if (templateId) filters.AND.push({ templates: { some: { id: Number(templateId) } } });
 
     try {
+        const author = await authMiddleware(req, res);
+        const authorId = author ? author.id : null;
+
         const blogs = await prisma.blog.findMany({
             where: filters,
             skip: (page - 1) * limit,
@@ -151,7 +166,27 @@ async function handlerGet(req,res){
                 tags: true,
             },
         });
-        return res.status(200).json({ blogs, page, limit });
+
+
+        // need to check for emptiness
+        // if any of the await fails, we get erro 
+
+        const reportData = authorId ? await getReportsForUserContent(authorId, "BLOG") : {};
+
+        const enrichedBlogs = blogs.map(blog => {
+            const isAuthor = authorId && blog.authorId === authorId;
+            return {
+                ...blog,
+                reports: isAuthor ? reportData[blog.id] || [] : undefined,
+            };
+        });
+
+        // some of the blog will have report, 
+        // some will have report as undefined 
+        // for those where report is undefined, if they are also flagged
+        // do not show them 
+        
+        return res.status(200).json({blogs:enrichedBlogs, page, limit });
     } catch (error) {
         console.error("Error fetching blog:", error);
         return res.status(422).json({ message: "Unprocessable entity: Unable to get the blogs" });

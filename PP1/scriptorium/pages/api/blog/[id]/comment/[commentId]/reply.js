@@ -51,12 +51,6 @@ import handlerCreateComment from "@/utils/comment/create-comment";
 
 
 export default async function handler(req,res){
-    // how do we do nesting common functions?
-
-    // how do we await?
-
-    //post
-
     await handlerCreateComment(req,res,1);
 }
 
