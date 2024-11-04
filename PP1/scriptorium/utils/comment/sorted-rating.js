@@ -59,7 +59,7 @@ export default async function handlerSorting(req, res, which) {
             // find current user to see if they have any reported blogs
             // so they can see the explanations, if they exist, fro being flagged
             // If the user is authenticated, find flagged blogs authored by them
-            if (authorId!=null) {
+            if (authorId!==null) {
                 const flaggedBlogIds = data
                     .filter(blog => blog.flagged && blog.authorId === authorId)
                     .map(blog => blog.id);
@@ -125,19 +125,28 @@ export default async function handlerSorting(req, res, which) {
                   });
             }
 
-            reportData = authorId ? await getReportsForUserContent(authorId, "COMMENT") : {};
+            if (authorId !== null) {
+                const flaggedCommentIds = data
+                    .filter(comment => comment.flagged && comment.authorId === authorId)
+                    .map(comment => comment.id);
+                
+                console.log("Flagged Comment IDs:", flaggedCommentIds);
 
-            newData = data.map(datum => {
-                const isAuthor = authorId && datum.authorId === authorId;
+                if (flaggedCommentIds.length > 0) {
+                    reportData = await getReportsForUserContent(authorId, "COMMENT", flaggedCommentIds);
+                }
+            }
+
+            console.log("Comment Report Data:", reportData);
+
+            newData = data.map(comment => {
+                const isAuthorOfFlagged = comment.flagged && comment.authorId === authorId;
                 return {
-                    ...datum,
-                    reports: isAuthor ? reportData[datum.id] || [] : undefined,
+                    ...comment,
+                    reports: isAuthorOfFlagged ? reportData[comment.id] || [] : undefined,
                 };
             });
-
-           
         }
-     
 
         return res.status(200).json({
         data: newData,

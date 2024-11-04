@@ -30,7 +30,7 @@ async function handlerCreate(req,res){
             return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
         }
 
-        const {title, description, tags, templates} = req.body;
+        const {title, description, tags} = req.body;
 
         if (!title || !description || !tags) {
             return res.status(400).json({ message: "Invalid input. Ensure all fields are provided." });
@@ -58,27 +58,16 @@ async function handlerCreate(req,res){
 
         const tagConnectArray = await processTags(tags);
         
-        // Format templates array for many-to-many relation
-        // Process templates only if valid
-         const templateConnectArray = Array.isArray(templates) && templates.length > 0 
-         ? templates.map(templateId => {
-             if (typeof templateId !== 'number') {
-                 throw new Error("Invalid template ID format. Template IDs must be integers.");
-             }
-             return { id: templateId };
-         })
-         : [];
 
          console.log(tagConnectArray);
 
          // On creation: If you don’t specify comments, Prisma just sets it 
-         // as an empty array in the returned object.
+         // as an empty array in the returned object. same thing w template
         const blog = await prisma.blog.create({
             data: {
             title: title,
             description: description,
             tags: { connect: tagConnectArray },
-            templates: { connect: templateConnectArray }, // Connect existing templates by ID
             author: { connect: { id: author.id } },
             },
             include: {  // This will include tags in the response
@@ -98,16 +87,11 @@ async function handlerCreate(req,res){
 
 
 // get blogs by their title, content, tags, and also the code templates 
-// paginated 
+// - paginated 
 
 // go through blog results, check if ivalid 
-// if author of blog is not auth user 
-// hide it 
-// if same user 
-// show everything, including reports 
-
-// how do i do that?
-
+// if author of blog is not auth user, show indication that it should be flagged
+// if is a user and is flagged show additional reports 
 
 async function handlerGet(req,res){
     // not restricted to auth users
@@ -145,14 +129,14 @@ async function handlerGet(req,res){
     if (templateId) filters.AND.push({ templates: { some: { id: Number(templateId) } } });
 
     try {
-        const author = await authMiddleware(req, res);
+        const author = await authMiddleware(req, res, {getFullUser: true});
         const authorId = author ? author.id : null;
 
         const blogs = await prisma.blog.findMany({
             where: filters,
             skip: (page - 1) * limit,
             take: parseInt(limit),
-            include: {  // might change up these includs 
+            include: {  
                 author: {
                     select: {
                         id: true,
@@ -168,11 +152,23 @@ async function handlerGet(req,res){
         });
 
 
-        // need to check for emptiness
-        // if any of the await fails, we get erro 
 
-        const reportData = authorId ? await getReportsForUserContent(authorId, "BLOG") : {};
+        // If user is authenticated, find flagged blogs authored by them
+        let reportData = {};
+        if (authorId) {
+            const flaggedBlogIds = blogs
+                .filter(blog => blog.flagged && blog.authorId === authorId)
+                .map(blog => blog.id);
 
+            console.log(flaggedBlogIds);
+
+            // Fetch reports for flagged blogs authored by the user
+            if (flaggedBlogIds.length > 0) {
+                reportData = await getReportsForUserContent(authorId, "BLOG", flaggedBlogIds);
+            }
+        }
+
+        // Attach reports to flagged blogs authored by the current user
         const enrichedBlogs = blogs.map(blog => {
             const isAuthor = authorId && blog.authorId === authorId;
             return {
@@ -182,11 +178,22 @@ async function handlerGet(req,res){
         });
 
         // some of the blog will have report, 
-        // some will have report as undefined 
-        // for those where report is undefined, if they are also flagged
-        // do not show them 
+        // some will have report as undefined, cos some flagged content won't have reports 
+
         
-        return res.status(200).json({blogs:enrichedBlogs, page, limit });
+        // Calculate total count for pagination
+        const totalCount = await prisma.blog.count({ where: filters });
+
+        // Return enriched blogs with pagination info
+        return res.status(200).json({
+            data: enrichedBlogs,
+            pagination: {
+                total: totalCount,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(totalCount / limit),
+            },
+        });
     } catch (error) {
         console.error("Error fetching blog:", error);
         return res.status(422).json({ message: "Unprocessable entity: Unable to get the blogs" });
