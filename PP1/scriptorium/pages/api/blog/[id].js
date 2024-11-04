@@ -67,7 +67,7 @@ async function handlerUpdate(req,res){
         return res.status(400).json({ error: 'Invalid blog ID' });
     }
 
-    const {title, description, tags, flagged, upvotes, downvotes} = req.body;
+    const {title, description, tags, upvotes, downvotes, flagged} = req.body;
     const updateData = {};
 
     // Validate title and description if provided
@@ -107,7 +107,7 @@ async function handlerUpdate(req,res){
     if (downvotes !== undefined) updateData.downvotes = downvotes;
 
     if(!title && !description && !tags && !flagged && !upvotes && !downvotes){
-        return res.status(200).json({ message: "Nothing provided to update" });
+        return res.status(400).json({ message: "Nothing provided to update" });
     }
     
     try{

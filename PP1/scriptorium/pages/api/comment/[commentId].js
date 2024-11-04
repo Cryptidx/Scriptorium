@@ -90,7 +90,7 @@ export default async function handler(req,res){
     }
 
     catch(error){
-        return res.status(422).json({ message: "Failed to update blog post", error });
+        return res.status(422).json({ message: "Failed to update comment", error });
     }
 
 }

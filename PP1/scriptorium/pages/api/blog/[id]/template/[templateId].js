@@ -40,7 +40,7 @@ async function handlerDelete(req, res) {
         return res.status(200).json(updatedBlog);
 
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(422).json({ error: error.message });
     }
 }
 
@@ -83,7 +83,7 @@ async function handlerUpdate(req, res) {
         return res.status(200).json(updatedBlog);
 
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(422).json({ error: error.message });
     }
 }
 
