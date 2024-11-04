@@ -120,8 +120,14 @@ async function handlerUpdate(req,res){
         }
 
         // Check permissions
-        const author = await authMiddleware(req, res, { getFullUser: true });
-        if (!author || (author.role !== 'SYS_ADMIN' && author.id !== blog.authorId)) {
+        const user = await authMiddleware(req, res, { getFullUser: true });
+        if (!user || (user.role !== 'SYS_ADMIN' && user.id !== blog.authorId)) {
+            return res.status(403).json({ message: "Permission denied" });
+        }
+
+        // Check if the blog is flagged and if the user is not a system admin
+        // if flagged, author cannot edit the blog
+        if (blog.flagged && user.role !== 'SYS_ADMIN') {
             return res.status(403).json({ message: "Permission denied" });
         }
 

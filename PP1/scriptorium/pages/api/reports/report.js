@@ -21,15 +21,15 @@ export default async function handler(req, res) {
   
       if (method === 'GET') {
         if (!isAdmin) {
-          return res.status(403).json({ error: 'Forbidden: Admin access required to view reports.' });
+          return res.status(403).json({ error: 'Forbidden: Permission denied.' });
         }
         return await handleReportListing(req, res);
-      } else if (method === 'PUT') {
+      } /*else if (method === 'PUT') {
         if (!isAdmin) {
-          return res.status(403).json({ error: 'Forbidden: Admin access required to hide content.' });
+          return res.status(403).json({ error: 'Forbidden: Permission denied.' });
         }
         return await handleContentHiding(req, res);
-      } else {
+      } */else {
         return res.status(405).json({ error: `Method ${method} Not Allowed` });
       }
     } catch (error) {
@@ -177,7 +177,7 @@ async function handleReportListing(req, res) {
   
 
 
-
+/*
   async function handleContentHiding(req, res) {
     try {
       const { contentId, contentType } = req.body;
@@ -220,4 +220,4 @@ async function handleReportListing(req, res) {
       res.status(422).json({ error: 'Unprocessable Entity: Unable to hide content.' });
     }
   }
-  
+  */
