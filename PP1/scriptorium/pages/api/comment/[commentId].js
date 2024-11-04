@@ -1,6 +1,7 @@
 import prisma from "@/utils/db"
 import {authMiddleware} from "@/lib/auth";
 
+
 /* 
 UPDATE COMMENTS IDENTIFIABLE BY COMMENT ID 
 ALSO, DELETE COMMENTS (doesn't really delete them, but changes their flag for 
