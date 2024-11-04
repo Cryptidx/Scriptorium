@@ -67,7 +67,7 @@ async function handlerUpdate(req,res){
         return res.status(400).json({ error: 'Invalid blog ID' });
     }
 
-    const {title, description, tags, upvotes, downvotes} = req.body;
+    const {title, description, tags, flagged, upvotes, downvotes} = req.body;
     const updateData = {};
 
     // Validate title and description if provided
@@ -121,14 +121,31 @@ async function handlerUpdate(req,res){
 
         // Check permissions
         const user = await authMiddleware(req, res, { getFullUser: true });
-        if (!user || (user.role !== 'SYS_ADMIN' && user.id !== blog.authorId)) {
+        if (!user ) {
             return res.status(403).json({ message: "Permission denied" });
         }
 
-        // Check if the blog is flagged and if the user is not a system admin
-        // if flagged, author cannot edit the blog
-        if (blog.flagged && user.role !== 'SYS_ADMIN') {
-            return res.status(403).json({ message: "Permission denied" });
+        const isAdmin = user.role === 'SYS_ADMIN';
+        const isAuthor = user.id === blog.authorId;
+
+        // Restrict to upvotes/downvotes if not admin and not author
+        if (!isAdmin && !isAuthor) {
+            if (title || description || tags || flagged !== undefined) {
+                return res.status(403).json({ message: "Permission denied. Only upvotes/downvotes can be updated." });
+            }
+        }
+
+        // Prevent non-admins from updating flagged blogs
+        if (blog.flagged && !isAdmin) {
+            return res.status(403).json({ message: "Permission denied. Flagged blog." });
+        }
+
+        // Only SYS_ADMIN can update the flagged status
+        if (flagged !== undefined && isAdmin) {
+            if (typeof flagged !== 'boolean') {
+                return res.status(400).json({ message: "Flagged must be a boolean value" });
+            }
+            updateData.flagged = flagged;
         }
 
         const updatedBlog = await prisma.blog.update({
