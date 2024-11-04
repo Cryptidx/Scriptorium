@@ -1,18 +1,20 @@
 import jwt from 'jsonwebtoken';
 import prisma from './prisma'; 
 
+// Middleware and helpers to check authentication of user 
 const SECRET_KEY = process.env.JWT_SECRET_ACCESS;
 
-// Middleware to verify JWT and attach userId to the request
+// Authentication checker to verify JWT and attach userId to the request
+/* GPT: Create a helper based on my model for authentication, taken from past exercise */
 export async function authMiddleware(req, res, { getFullUser = false } = {}) {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization; // Check for 'Authorization' header
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) { // Check if authorization follows the syntax
     res.status(401).json({ error: 'Unauthorized: No token provided. This action requires User login.' });
     return null;
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(' ')[1]; // Get token from 'Authorization' header
 
   try {
     // Verify the token to get the userId
@@ -37,7 +39,7 @@ export async function authMiddleware(req, res, { getFullUser = false } = {}) {
     return user;
 
   } catch (error) {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'Invalid or expired token.' });
     return null;
   }
 }
@@ -77,34 +79,3 @@ export async function isAuthenticated(req, res) {
     return false;
   }
 }
-
-
-/*
-
-so basically a middleware is a function that wraps 
-around the handler, returns a function with similar signature 
-as handler (that could be used instead of the handler), 
-but does some additional stuff (in this case: checks)
-and now, inside protected.js or any other route,
-instead of `export default handler`
-you'll put `export default performChecks(handler)`
-the middleware that checks for admin user 
-is different than the one that checks for any kind of logged in user 
-
-
-*/
-
-
-// function performChecks(handler){
-//    return function(req, res) {
-
-//        // perform checks
-//        if (ok){
-//            return handler(req, res)
-
-//        } else {
-//            res.status(403)....
-//        } 
-//    }
-// }''
-

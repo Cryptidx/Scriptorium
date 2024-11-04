@@ -2,7 +2,9 @@ import prisma from "@/utils/db";
 import { authMiddleware } from "@/lib/auth";
 import {getReportsForUserContent} from "@/utils/comment-blog/find-report";
 
-// chat
+// GPT: create me a helper function based on
+// how i want to sort fetched comments or blogs based
+// on the request query parameters 
 export default async function handlerSorting(req, res, which) {
     // GET request 
     // not restricted 

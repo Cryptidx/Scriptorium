@@ -2,58 +2,49 @@ import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
 import processTags from "@/lib/helpers/create_tags";
 import { getReportsForUserContent } from "@/utils/comment-blog/find-report";
-/*
-CREATE AND GET BLOG (FROM SET OF BLOGS)
-*/
 
-// create a blog 
+/* CREATE and GET all blogs, not specified by ID specific operations*/
+
+// Create a blog with the given title, description, and tags
+/* requirements: must be a user and all required body args are the expected variables */
 async function handlerCreate(req,res){
-    /*
-    requirements:
-    - is a user
-    - all required args are the right variables and 
-    handles cases when null 
-    
-    */
     try {
-        // POST handler, restricted to users only 
-        // expects: title, description, tag, and code template/empty 
+        // POST handler to create 
         if(req.method !== "POST"){
-            return res.status(405).json({message: "method not allowed"});
+            return res.status(405).json({error: "method not allowed"});
         }
 
-        // author of the blog
+        // Author of the blog and must be a user
         const author = await authMiddleware(req, res, { getFullUser: true });
         console.log(author);
         if (!author && !author.id) {
-            // could be null, cos we don't have a current user by jwt 
-            return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+            return res.status(401).json({ error: "Unauthorized. Please log in to create a blog." }); // could be null, cos we don't have a current user by jwt 
         }
 
         const {title, description, tags} = req.body;
 
         if (!title || !description || !tags) {
-            return res.status(400).json({ message: "Invalid input. Ensure all fields are provided." });
+            return res.status(400).json({ error: "Invalid input. Ensure all fields are provided." });
         }
 
         // Validate title and description are non-empty strings
         if (typeof title !== 'string' || title.trim() === '') {
-            return res.status(400).json({ message: "Title must be a non-empty string" });
+            return res.status(400).json({ error: "Title must be a non-empty string" });
         }
 
         if (typeof description !== 'string' || description.trim() === '') {
-            return res.status(400).json({ message: "Description must be a non-empty string" });
+            return res.status(400).json({ error: "Description must be a non-empty string" });
         }
 
         // Validate tag array
         if (!Array.isArray(tags) || tags.length === 0) {
-            return res.status(400).json({ message: "Request must contain at least one tag" });
+            return res.status(400).json({ error: "Request must contain at least one tag" });
         }
 
         // hard assumption that tag and template are javascript arays
         // there has to be at least one thing in tags
         if(!tags || tags.length == 0){
-            return res.status(400).json({message: "Request must contain at least 1 tag"});
+            return res.status(400).json({error: "Request must contain at least 1 tag"});
         }
 
         const tagConnectArray = await processTags(tags);
@@ -77,7 +68,7 @@ async function handlerCreate(req,res){
         });
 
         // returns entire blog for now 
-        return res.status(200).json(blog);
+        return res.status(200).json({message: "Blog created successfully", blog: blog});
 
     } catch (error) {
         console.error("Error creating blog:", error);

@@ -7,6 +7,7 @@ const REFRESH_TOKEN_SECRET = process.env.JWT_SECRET_REFRESH;
 const EXPIRE_ACCESS = process.env.JWT_EXPIRES_IN_ACCESS;
 const EXPIRE_REFRESH = process.env.JWT_EXPIRES_IN_REFRESH;
 
+// Generate access and refresh tokens, taken from GPT
 function generateTokens(user) {
   const accessToken = jwt.sign(
     { userId: user.id, role: user.role },
@@ -21,12 +22,11 @@ function generateTokens(user) {
   return { accessToken, refreshToken };
 }
 
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-  }
+}
 
   const { email, password } = req.body;
 
