@@ -83,6 +83,10 @@ export default async function handlerSorting(req, res, which) {
                     skip: skip,
                     take: limitInt,
                 });
+
+                totalCount = await prisma.comment.count({
+                    where: { blogId: blogId, parentId: null },
+                  });
             }
 
             else{
@@ -95,6 +99,10 @@ export default async function handlerSorting(req, res, which) {
                     skip: skip,
                     take: limitInt,
                 });
+
+                totalCount = await prisma.comment.count({
+                    where: { parentId: null },
+                  });
             }
 
             reportData = authorId ? await getReportsForUserContent(authorId, "COMMENT") : {};
@@ -107,9 +115,7 @@ export default async function handlerSorting(req, res, which) {
                 };
             });
 
-            totalCount = await prisma.comment.count({
-                where: { blogId: blogId, parentId: null },
-              });
+           
         }
      
           
