@@ -36,11 +36,20 @@ else
 fi
 
 # Step 3: Check for Python installation and version
-if ! command -v python3 &> /dev/null; then
-    echo "Python3 could not be found. Please install Python3 to continue."
+if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "darwin"* ]]; then
+    PYTHON_COMMAND="python3"
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    PYTHON_COMMAND="python"
+else
+    echo "Unsupported OS: $OSTYPE"
+    exit 1
+fi
+
+if ! command -v $PYTHON_COMMAND &> /dev/null; then
+    echo "$PYTHON_COMMAND could not be found. Please install Python to continue."
     exit 1
 else
-    PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+    PYTHON_VERSION=$($PYTHON_COMMAND --version 2>&1 | awk '{print $2}')
     REQUIRED_PYTHON_VERSION="3.10"
     if ! version_ge "$PYTHON_VERSION" "$REQUIRED_PYTHON_VERSION"; then
         echo "Python 3.10 or higher is required. Found version $PYTHON_VERSION."
@@ -85,12 +94,6 @@ else
         echo "Java version 20 or higher is required. Found version $JAVA_VERSION."
         exit 1
     fi
-fi
-
-# Step 7: Check for SQLite installation
-if ! command -v sqlite3 &> /dev/null; then
-    echo "SQLite could not be found. Please install SQLite before running this script."
-    exit 1
 fi
 
 # Generate a timestamped migration name
