@@ -1,16 +1,7 @@
 import handlerSorting from "@/utils/comment/sorted-rating";
 
 // GET request 
-// not restricted 
-
-// get list of comments based on rating
-// so two quesries, rating(upvote/downvote), order(ascending/descending)
-
-//I get exposed to the most valued or controversial discussions first.
-
-// We are assuming the most valued discussion
-// is the one with the most upvoted 
-// we do upvoted in descending order, paginated 
+// not restricted to USER
 
 /*
 GET COMMENTS SORTED IN DESCENDING ORDER OF UPVOTES

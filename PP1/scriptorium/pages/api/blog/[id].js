@@ -10,7 +10,7 @@ DELETE AND UPDATE BLOG FOUND BY BLOG ID
 // delete a blog by id 
 // will deleting a blog delete its associated comments? i think so 
 async function handlerDelete(req,res){
-    // do we delete coressponding relations
+    // do we delete coressponding relations yass
     const { id } = req.query;
 
     if(req.method !== 'DELETE'){
@@ -122,7 +122,7 @@ async function handlerUpdate(req,res){
         // Check permissions
         const user = await authMiddleware(req, res, { getFullUser: true });
         if (!user ) {
-            return res.status(403).json({ error: "Permission denied" });
+            return res.status(403).json({ error: "Permission denied, please make an account" });
         }
 
         const isAdmin = user.role === 'SYS_ADMIN';
@@ -168,19 +168,7 @@ async function handlerUpdate(req,res){
 
 
 export default async function handler(req, res) {
-    // delete and update are restricted pathways 
-    try{
-        const author = await authMiddleware(req, res);
-        if (!author) {
-            // could be null, cos we don't have a current user by jwt 
-            return res.status(401).json({ error: "Unauthorized. Please log in to create a blog." });
-        }
-    }
-    
-    catch(error){
-        return res.status(422).json({ error: "Failed to find current user", error });
-    }
-
+ 
     let method = req.method;
     switch(method){
         case "DELETE":

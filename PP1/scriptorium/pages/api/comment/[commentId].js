@@ -10,13 +10,12 @@ ALSO, DELETE COMMENTS (doesn't really delete them, but changes their flag for
 export default async function handler(req,res){
     // this should update top level and sub level commets 
     // cos all we need is comment id tbh
-
-    // authorized action
     if (req.method !== 'PUT') {
         return res.setHeader('Allow', ['PUT']).status(405).end(`Method ${method} Not Allowed`);
     }
 
     try{
+         // authorized action
         const author = await authMiddleware(req, res, { getFullUser: true });
         if (!author){
             return res.status(403).json({ error: "Permission denied" });
@@ -90,8 +89,8 @@ export default async function handler(req,res){
     }
 
     catch(error){
-        console.log(error);
-        return res.status(422).json({ error: "Failed to update comment", error });
+        console.log("Failed to update comment: ", error);
+        return res.status(422).json({ error: "Failed to update comment"});
     }
 
 }

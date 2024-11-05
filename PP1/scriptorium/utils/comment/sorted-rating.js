@@ -2,14 +2,10 @@ import prisma from "@/utils/db";
 import { authMiddleware } from "@/lib/auth";
 import {getReportsForUserContent} from "@/utils/comment-blog/find-report";
 
-// GPT: create me a helper function based on
-// how i want to sort fetched comments or blogs based
-// on the request query parameters 
+// GPT: create me a helper function to get list of blogs based on rating, descending, basd on upvotes
 export default async function handlerSorting(req, res, which) {
-    // GET request 
-    // not restricted 
-    // 0 blogs 
-    // 1 comments 
+    // GET request, restricted to users
+    // 0 blogs, 1 comments in blog, 2 comments appwide 
 
     // Only allow GET requests
     if (req.method !== "GET") {
@@ -23,22 +19,16 @@ export default async function handlerSorting(req, res, which) {
     // would be null for top level function, cos its directly under blogs
     const blogId = req.query.id ? parseInt(req.query.id, 10) : null;
     console.log(blogId);
+
     // Convert page and limit to integers and calculate skip
     const pageInt = parseInt(page);
     const limitInt = parseInt(limit);
     const skip = (pageInt - 1) * limitInt;
 
-    // only show valid stuff if i'm not the author 
-    // else show everything if i'm the author 
-
-    // go into handle report listing 
-    // and get the stuff from report listing 
-    // content id could be commeent id or blog id 
-    
 
     try {
         // Fetch paginated blog posts sorted by upvotes in descending order
-        // add report information for blogs/ comments where user is same as ]
+        // add report information for blogs/ comments where user is same as 
         // current usr 
 
         let data;
@@ -74,7 +64,6 @@ export default async function handlerSorting(req, res, which) {
                 }
             }
 
-            console.log(reportData);
     
             // Map over blogs, attach reports if user is the author of flagged blogs
             newData = data.map(blog => {
@@ -112,7 +101,7 @@ export default async function handlerSorting(req, res, which) {
             }
 
             else{
-                // get juiciest comments everywhere 
+                // get juiciest comments everywhere, app-wide
                 data = await prisma.comment.findMany({
                     // where: {
                     //   //parentId: null,  // Only fetch top-level comments
@@ -164,8 +153,7 @@ export default async function handlerSorting(req, res, which) {
     } 
     
     catch (error) {
-        console.log(error);
-        console.error("Error fetching sorted blogs:", error);
+        console.error("Error fetching sorted blogs: ", error);
         return res.status(422).json({ error: "Failed to get sorted blogs or comments" });
     }
 }

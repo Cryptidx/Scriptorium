@@ -2,7 +2,9 @@ import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
 
 export default async function handlerCreateComment(req,res,which){
-    // create a subcomment 
+    // which == 0, top level comment
+    // which == 1, subcomment
+
     if(req.method !== "POST"){
         return res.status(405).json({error: "method not allowed"});
     }
@@ -17,9 +19,6 @@ export default async function handlerCreateComment(req,res,which){
 
         const blogId = req.query.id;
         const commentId = req.query.commentId;
-    
-
-        //console.log("my id is" + blogId);
 
         const blog_id = parseInt(blogId);
         const comment_id = which === 1 ? parseInt(commentId) : null; 
@@ -35,7 +34,6 @@ export default async function handlerCreateComment(req,res,which){
         }
     
         let newData = {
-            // blogId: blog_id,
             blog: { connect: { id: blog_id } },
             description: description.trim(),
             author: { connect: { id: author } },
@@ -44,7 +42,6 @@ export default async function handlerCreateComment(req,res,which){
         if(which === 1){
             // subcomment
             // Set the parent comment ID for subcomment
-            //newData.parentId = comment_id;
             newData.parent = { connect: { id: comment_id } };
         }
 
@@ -56,8 +53,8 @@ export default async function handlerCreateComment(req,res,which){
     }
 
     catch(error){
-        console.log(error);
-        return res.status(422).json({ error: "Failed to create comment", error_msg: error});
+        console.log("Failed to create comment: ", error);
+        return res.status(422).json({ error: "Failed to create comment"});
     }   
 
 }
