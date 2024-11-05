@@ -13,7 +13,7 @@ export default async function handlerSorting(req, res, which) {
 
     // Only allow GET requests
     if (req.method !== "GET") {
-        return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
     // get list of blogs based on rating, descending, basd on upvotes
@@ -93,7 +93,7 @@ export default async function handlerSorting(req, res, which) {
                 // get comments within a blog
     
                 if(!blogId || isNaN(blogId)){
-                    return res.status(400).json({ message: "Invalid blog id" });
+                    return res.status(400).json({ error: "Invalid blog id" });
                 }
     
                 data = await prisma.comment.findMany({
@@ -151,18 +151,19 @@ export default async function handlerSorting(req, res, which) {
         }
 
         return res.status(200).json({
-        data: newData,
-        pagination: {
-            total: totalCount,
-            page: pageInt,
-            limit: limitInt,
-            totalPages: Math.ceil(totalCount / limitInt),
-        },
+            message: "Success",
+            data: newData,
+            pagination: {
+                total: totalCount,
+                page: pageInt,
+                limit: limitInt,
+                totalPages: Math.ceil(totalCount / limitInt),
+            },
         });
     } 
     
     catch (error) {
         console.error("Error fetching sorted blogs:", error);
-        return res.status(422).json({ message: "Failed to get sorted blogs or comments" });
+        return res.status(422).json({ error: "Failed to get sorted blogs or comments" });
     }
 }

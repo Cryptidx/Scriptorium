@@ -72,7 +72,7 @@ async function handlerCreate(req,res){
 
     } catch (error) {
         console.error("Error creating blog:", error);
-        return res.status(422).json({ message: "Unprocessable entity: Unable to create the blog" });
+        return res.status(422).json({ error: "Unprocessable entity: Unable to create the blog" });
     }
 }
 
@@ -87,7 +87,7 @@ async function handlerCreate(req,res){
 async function handlerGet(req,res){
     // not restricted to auth users
     if(req.method !== "GET"){
-        return res.status(405).json({message: "method not allowed"});
+        return res.status(405).json({error: "method not allowed"});
     }
 
     // Chat gpt: Please help with searching for items 
@@ -98,7 +98,7 @@ async function handlerGet(req,res){
     if ((title && typeof title !== 'string') || 
     (content && typeof content !== 'string') || 
     (templateId && typeof templateId !== 'string')) {
-    return res.status(400).json({ message: "Invalid input. 'title', 'content', and 'templateId' must be strings if provided." });
+    return res.status(400).json({ error: "Invalid input. 'title', 'content', and 'templateId' must be strings if provided." });
     }
 
     // split all strings in tags query 
@@ -177,6 +177,7 @@ async function handlerGet(req,res){
 
         // Return enriched blogs with pagination info
         return res.status(200).json({
+            message: "Blogs fetched successfully",
             data: enrichedBlogs,
             pagination: {
                 total: totalCount,
@@ -187,7 +188,7 @@ async function handlerGet(req,res){
         });
     } catch (error) {
         console.error("Error fetching blog:", error);
-        return res.status(422).json({ message: "Unprocessable entity: Unable to get the blogs" });
+        return res.status(422).json({ error: "Unprocessable entity: Unable to get the blogs" });
     }
 }
 

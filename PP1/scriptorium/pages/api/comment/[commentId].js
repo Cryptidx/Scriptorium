@@ -19,7 +19,7 @@ export default async function handler(req,res){
     try{
         const author = await authMiddleware(req, res, { getFullUser: true });
         if (!author){
-            return res.status(403).json({ message: "Permission denied" });
+            return res.status(403).json({ error: "Permission denied" });
         }
         
         const commentId = req.query.commentId;
@@ -41,7 +41,7 @@ export default async function handler(req,res){
         const isAuthor = author.id === comment.authorId
 
         if (comment.flagged && !isAdmin) {
-            return res.status(403).json({ message: "Permission denied, flagged blog" });
+            return res.status(403).json({ error: "Permission denied, flagged blog" });
         }
 
 
@@ -50,7 +50,7 @@ export default async function handler(req,res){
 
         if (description !== undefined){
             if(typeof description !== 'string' || description.trim() == ''){
-                return res.status(400).json({ message: "Description must be a non-empty string" });
+                return res.status(400).json({ error: "Description must be a non-empty string" });
             }
             updateData.description = description.trimEnd();
         } 
@@ -58,7 +58,7 @@ export default async function handler(req,res){
     
         if (flagged !== undefined && isAdmin){
             if(typeof flagged !== 'boolean'){
-                return res.status(400).json({ message: "Flagged must be a boolean" });
+                return res.status(400).json({ error: "Flagged must be a boolean" });
             }
             updateData.flagged = flagged; 
         } 
@@ -67,7 +67,7 @@ export default async function handler(req,res){
         if(!isAdmin && !isAuthor){
             if(description || flagged){
                 // if theres stuff in here
-                return res.status(403).json({ message: "Permission denied, only upvotes and downvotes" });
+                return res.status(403).json({ error: "Permission denied, only upvotes and downvotes" });
             }
         }
 
@@ -76,7 +76,7 @@ export default async function handler(req,res){
 
 
         if(Object.keys(updateData).length === 0){
-            return res.status(200).json({ message: "Nothing provided to update" });
+            return res.status(200).json({ error: "Nothing provided to update" });
         }
 
         const updatedComment = await prisma.comment.update({
@@ -85,12 +85,13 @@ export default async function handler(req,res){
         })
 
         // can this return empty? no cos i checked its existence before
-        return res.status(200).json(updatedComment);
+        return res.status(200).json({message: "Comment updated", comment: updatedComment});
 
     }
 
     catch(error){
-        return res.status(422).json({ message: "Failed to update comment", error });
+        console.log(error);
+        return res.status(422).json({ error: "Failed to update comment", error });
     }
 
 }
