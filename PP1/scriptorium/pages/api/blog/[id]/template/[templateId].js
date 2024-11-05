@@ -21,7 +21,6 @@ async function handlerDelete(req, res) {
     // returns error if either id is NaN
     if (isNaN(blogId) || isNaN(templateId)) {
         return res.status(400).json({ error: "Invalid blog or template ID" });
-        return res.status(400).json({ error: "Invalid blog or template ID" });
     }
 
     try {
@@ -55,20 +54,20 @@ async function handlerDelete(req, res) {
             return res.status(404).json({ error: "Not a valid template ID" })
         }
 
-        // gets blog from given blogId
-        const blog = await prisma.blog.findUnique({
-            where: { id: blogId }
-        });
+        // // gets blog from given blogId
+        // const blog = await prisma.blog.findUnique({
+        //     where: { id: blogId }
+        // });
 
-        // returns error if blog does not exist
-        if (!blog) {
-            return res.status(404).json({ error: "Not a valid blog ID" })
-        }
+        // // returns error if blog does not exist
+        // if (!blog) {
+        //     return res.status(404).json({ error: "Not a valid blog ID" })
+        // }
 
-        // returns error if user is not an admin or if not the author of the blog
-        if (author.role !== "SYS_ADMIN" && author.id !== blog.authorId) {
-            return res.status(403).json({error: "You do not have correct permission"});
-        }
+        // // returns error if user is not an admin or if not the author of the blog
+        // if (author.role !== "SYS_ADMIN" && author.id !== blog.authorId) {
+        //     return res.status(403).json({error: "You do not have correct permission"});
+        // }
 
         // removes template from blog
         const updatedBlog = await prisma.blog.update({
@@ -86,7 +85,6 @@ async function handlerDelete(req, res) {
         // returns the updated blog
         return res.status(200).json({ message: "Successfully removed template", blog: updatedBlog});
         // Return the found template
-        return res.status(200).json({message: "Success!", changedBlog: updatedBlog});
 
     } catch (error) {
         console.log("failed to delete template: ", error)
@@ -114,7 +112,7 @@ async function handlerUpdate(req, res) {
     // returns error if either id is NaN
     if (isNaN(blogId) || isNaN(templateId)) {
         return res.status(400).json({ error: "Invalid blog or template ID" });
-        return res.status(400).json({ error: "Invalid blog or template ID" });
+
     }
 
     try {
@@ -150,20 +148,20 @@ async function handlerUpdate(req, res) {
             return res.status(404).json({ error: "Not a valid template ID" })
         }
 
-        // gets blog from given blogId
-        const blog = await prisma.blog.findUnique({
-            where: { id: blogId }
-        });
+        // // gets blog from given blogId
+        // const blog = await prisma.blog.findUnique({
+        //     where: { id: blogId }
+        // });
 
-        // returns error if blog does not exist
-        if (!blog) {
-            return res.status(404).json({ error: "Not a valid blog ID" })
-        }
+        // // returns error if blog does not exist
+        // if (!blog) {
+        //     return res.status(404).json({ error: "Not a valid blog ID" })
+        // }
 
-        // returns error if user is not an admin or if not the author of the blog
-        if (author.role !== "SYS_ADMIN" && author.id !== blog.authorId) {
-            return res.status(403).json({error: "You do not have correct permission"});
-        }
+        // // returns error if user is not an admin or if not the author of the blog
+        // if (author.role !== "SYS_ADMIN" && author.id !== blog.authorId) {
+        //     return res.status(403).json({error: "You do not have correct permission"});
+        // }
 
         const updatedBlog = await prisma.blog.update({
         where: { id: blogId },
