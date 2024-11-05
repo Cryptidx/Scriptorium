@@ -76,7 +76,7 @@ export default async function handler(req,res){
 
 
         if(Object.keys(updateData).length === 0){
-            return res.status(200).json({ error: "Nothing provided to update" });
+            return res.status(400).json({ error: "Nothing provided to update" });
         }
 
         const updatedComment = await prisma.comment.update({
