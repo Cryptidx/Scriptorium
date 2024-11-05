@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# example script from gpt, NOT TESTED YET 
-
 # Exit if any command fails
 set -e
+
+# Set the directory of this script as the base path
+BASE_DIR="$(dirname "$0")"
 
 # Step 1: Install required packages
 echo "Installing npm packages..."
@@ -27,32 +28,8 @@ fi
 echo "Running Prisma migrations..."
 npx prisma migrate deploy
 
-# Step 5: Seed the database with an admin user
+# Step 5: Run the script to create the admin user
 echo "Creating an admin user..."
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="admin_password" # Replace with a secure password and document it in your docs
-
-# Insert the admin user into the database using Prisma
-npx prisma db seed --preview-feature <<EOF
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-async function main() {
-  const admin = await prisma.user.upsert({
-    where: { username: '${ADMIN_USERNAME}' },
-    update: {},
-    create: {
-      username: '${ADMIN_USERNAME}',
-      password: '${ADMIN_PASSWORD}', // Use hashed password if possible
-      role: 'SYS_ADMIN',
-    },
-  });
-  console.log("Admin user created:", admin);
-}
-
-main()
-  .catch(e => console.error(e))
-  .finally(async () => await prisma.$disconnect());
-EOF
+node "$BASE_DIR/scriptorium/startup-stuff-temp/create-sys-admin.js"
 
 echo "Startup preparation complete."
