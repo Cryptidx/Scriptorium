@@ -1,7 +1,7 @@
 import prisma from '../../../lib/prisma'; 
 import { isValidPassword, isValidEmail, isValidPhoneNumber } from '../../../lib/validate';
 import { authMiddleware } from '../../../lib/auth'; 
-import {hashPassword} from '../../../lib/helpers/account';
+import hashPassword from '../../../lib/helpers/account';
 
 const allowedAvatars = [ // only allowed avatars by default
     '/avatar_images/pfp1.png',
