@@ -17,6 +17,34 @@ then
     exit 1
 fi
 
+# Check for Python installation
+if ! command -v python3 &> /dev/null
+then
+    echo "Python3 could not be found. Please install Python3 to continue."
+    exit 1
+fi
+
+# Check for C compiler (gcc)
+if ! command -v gcc &> /dev/null
+then
+    echo "GCC (C compiler) could not be found. Please install GCC to continue."
+    exit 1
+fi
+
+# Check for C++ compiler (g++)
+if ! command -v g++ &> /dev/null
+then
+    echo "G++ (C++ compiler) could not be found. Please install G++ to continue."
+    exit 1
+fi
+
+# Check for Java compiler (javac)
+if ! command -v javac &> /dev/null
+then
+    echo "Java compiler (javac) could not be found. Please install the Java JDK to continue."
+    exit 1
+fi
+
 # Step 3: Check for SQLite installation
 if ! command -v sqlite3 &> /dev/null
 then
