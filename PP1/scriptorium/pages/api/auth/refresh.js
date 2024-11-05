@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       { expiresIn: '15m' }
     );
 
-    res.status(200).json({ accessToken });
+    res.status(200).json({ message: 'Token refreshed successfully', accessToken:accessToken });
   } catch (error) {
     console.error('Error in refresh token handler:', error);
     res.status(403).json({ error: 'Invalid or expired refresh token' });

@@ -52,7 +52,7 @@ export default async function handlerCreateComment(req,res,which){
             data: newData
         });
 
-        return res.status(201).json(comment);
+        return res.status(201).json({message: "Comment created", comment: comment});
     }
 
     catch(error){
