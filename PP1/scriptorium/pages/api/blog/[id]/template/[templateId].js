@@ -179,8 +179,8 @@ async function handlerUpdate(req, res) {
         return res.status(200).json({ message: "Successfully added template", blog: updatedBlog});
 
     } catch (error) {
-        console.log("failed to update template: ", error)
-        return res.status(422).json({ error: "failed to update template"});
+        console.log("failed to add template: ", error)
+        return res.status(422).json({ error: "failed to add template"});
     }
 }
 
