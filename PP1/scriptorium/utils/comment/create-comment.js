@@ -4,7 +4,7 @@ import { authMiddleware } from "@/lib/auth";
 export default async function handlerCreateComment(req,res,which){
     // create a subcomment 
     if(req.method !== "POST"){
-        return res.status(405).json({message: "method not allowed"});
+        return res.status(405).json({error: "method not allowed"});
     }
 
     try{
@@ -12,7 +12,7 @@ export default async function handlerCreateComment(req,res,which){
         const author = userId;
         if (!author) {
             // could be null, cos we don't have a current user by jwt 
-            return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+            return res.status(401).json({ error: "Unauthorized. Please log in to create a blog." });
         }
 
         const blogId = req.query.id;
@@ -31,7 +31,7 @@ export default async function handlerCreateComment(req,res,which){
         const {description} = req.body;
 
         if (!description || typeof description !== 'string' || description.trim() === '') {
-            return res.status(400).json({ message: "Description is required and cannot be empty" });
+            return res.status(400).json({ error: "Description is required and cannot be empty" });
         }
     
         let newData = {
@@ -57,7 +57,7 @@ export default async function handlerCreateComment(req,res,which){
 
     catch(error){
         console.log(error);
-        return res.status(422).json({ message: "Failed to create comment", error_msg: error});
+        return res.status(422).json({ error: "Failed to create comment", error_msg: error});
     }   
 
 }

@@ -36,7 +36,7 @@ async function handlerDelete(req,res){
         // Check permissions
         const author = await authMiddleware(req, res, { getFullUser: true });
         if (!author || (author.role !== 'SYS_ADMIN' && author.id !== blog.authorId)) {
-            return res.status(403).json({ message: "Permission denied" });
+            return res.status(403).json({ error: "Permission denied" });
         }
     
         // Delete the blog
@@ -49,7 +49,7 @@ async function handlerDelete(req,res){
 
     catch (error) {
         console.error("Error deleting blog:", error);
-        return res.status(422).json({ message: "Unprocessable entity: Unable to delete the blog" });
+        return res.status(422).json({ error: "Unprocessable entity: Unable to delete the blog" });
     }
 
 }
@@ -73,7 +73,7 @@ async function handlerUpdate(req,res){
     // Validate title and description if provided
     if (title !== undefined){
         if(typeof title !== 'string' || title.trim() == ''){
-            return res.status(400).json({ message: "Title must be a non-empty string" });
+            return res.status(400).json({ error: "Title must be a non-empty string" });
         }
 
         updateData.title = title.trimEnd();
@@ -81,7 +81,7 @@ async function handlerUpdate(req,res){
 
     if (description !== undefined){
         if(typeof description !== 'string' || description.trim() == ''){
-            return res.status(400).json({ message: "Description must be a non-empty string" });
+            return res.status(400).json({ error: "Description must be a non-empty string" });
         }
         updateData.description = description.trimEnd();
     } 
@@ -90,7 +90,7 @@ async function handlerUpdate(req,res){
     // Process tags if provided
     if (tags !== undefined) {
         if (!Array.isArray(tags) || tags.length === 0 || tags.some(tag => typeof tag !== 'string' || tag.trim() === '')) {
-            return res.status(400).json({ message: "Tags must be a non-empty array of non-empty strings" });
+            return res.status(400).json({ error: "Tags must be a non-empty array of non-empty strings" });
         }
 
         try {
@@ -99,7 +99,7 @@ async function handlerUpdate(req,res){
             updateData.tags = { set: tagConnectArray };  // Use set to update tags
         } catch (error) {
             console.error("Error processing tags:", error);
-            return res.status(422).json({ message: "Unprocessable entity: Unable to process tags" });
+            return res.status(422).json({ error: "Unprocessable entity: Unable to process tags" });
         }
     }
 
@@ -107,7 +107,7 @@ async function handlerUpdate(req,res){
     if (downvotes !== undefined) updateData.downvotes = downvotes;
 
     if(!title && !description && !tags && !flagged && !upvotes && !downvotes){
-        return res.status(400).json({ message: "Nothing provided to update" });
+        return res.status(400).json({ error: "Nothing provided to update" });
     }
     
     try{
@@ -122,7 +122,7 @@ async function handlerUpdate(req,res){
         // Check permissions
         const user = await authMiddleware(req, res, { getFullUser: true });
         if (!user ) {
-            return res.status(403).json({ message: "Permission denied" });
+            return res.status(403).json({ error: "Permission denied" });
         }
 
         const isAdmin = user.role === 'SYS_ADMIN';
@@ -131,19 +131,19 @@ async function handlerUpdate(req,res){
         // Restrict to upvotes/downvotes if not admin and not author
         if (!isAdmin && !isAuthor) {
             if (title || description || tags || flagged !== undefined) {
-                return res.status(403).json({ message: "Permission denied. Only upvotes/downvotes can be updated." });
+                return res.status(403).json({ error: "Permission denied. Only upvotes/downvotes can be updated." });
             }
         }
 
         // Prevent non-admins from updating flagged blogs
         if (blog.flagged && !isAdmin) {
-            return res.status(403).json({ message: "Permission denied. Flagged blog." });
+            return res.status(403).json({ error: "Permission denied. Flagged blog." });
         }
 
         // Only SYS_ADMIN can update the flagged status
         if (flagged !== undefined && isAdmin) {
             if (typeof flagged !== 'boolean') {
-                return res.status(400).json({ message: "Flagged must be a boolean value" });
+                return res.status(400).json({ error: "Flagged must be a boolean value" });
             }
             updateData.flagged = flagged;
         }
@@ -159,7 +159,7 @@ async function handlerUpdate(req,res){
 
     catch(error){
         console.error("Error updating blog:", error);
-        return res.status(422).json({ message: "Unprocessable entity: Unable to update the blog" });
+        return res.status(422).json({ error: "Unprocessable entity: Unable to update the blog" });
     }
     
     // when it comes to editing comments, use other pathway 
@@ -173,12 +173,12 @@ export default async function handler(req, res) {
         const author = await authMiddleware(req, res);
         if (!author) {
             // could be null, cos we don't have a current user by jwt 
-            return res.status(401).json({ message: "Unauthorized. Please log in to create a blog." });
+            return res.status(401).json({ error: "Unauthorized. Please log in to create a blog." });
         }
     }
     
     catch(error){
-        return res.status(422).json({ message: "Failed to find current user", error });
+        return res.status(422).json({ error: "Failed to find current user", error });
     }
 
     let method = req.method;

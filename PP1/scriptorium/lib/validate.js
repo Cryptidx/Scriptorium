@@ -1,3 +1,5 @@
+// Taken from past exercise
+
 /* validation helpers for user account data */
 export function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,6 +15,7 @@ export function isValidPassword(password) {
     return hasLowercase && hasUppercase && hasDigit && hasMinLength;
 }
 
+// Helper function to validate phone number
 export function isValidPhoneNumber(phoneNumber) {
     const phoneNumberRegex = /^[0-9]{10,15}$/;
     return phoneNumberRegex.test(phoneNumber);

@@ -1,5 +1,6 @@
 import prisma from "@/utils/db";
 
+// GPT: Create a helper based on my model for finding reports
 export async function getReportsForUserContent(userId, contentType, contentIds) {
     // Log input parameters to confirm they’re being passed correctly
     console.log("getReportsForUserContent - userId:", userId);

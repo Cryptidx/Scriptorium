@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Execute with: `node create-sys-admin.js`
-
+/* GPT: create me a sys admin user  */
 const saltRounds = 10;
 
 async function main() {
