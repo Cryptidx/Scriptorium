@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# run ./startup.sh
+# special thanks to gpt
+
 set -e
 
 # Step 1: Install required packages in the scriptorium directory
