@@ -116,7 +116,6 @@ async function handlerUpdate(req, res) {
     }
 
     try {
-
         const author = await authMiddleware(req, res, { getFullUser: true });
         if (!author) {
             return res.status(403).json({ error: "Unauthorized. Please log in to create code." });
