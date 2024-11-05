@@ -1,6 +1,10 @@
 import { authMiddleware } from '../../../lib/auth'; // Authentication middleware
 import prisma from '../../../lib/prisma'; // Prisma client instance
 
+/* GPT: based on my model and the report use cases, can you
+make me handler heler functions for the generla handler for 
+1) when any user wants to make a report 
+2) when the sys admin wants to view by most flgged */
 export default async function handler(req, res) {
     try {
       const { method } = req;
@@ -86,87 +90,96 @@ async function handleReportSubmission(req, res, userId) {
     }
 }
 
-
-
+/* GPT : Create a handler for the report listing for sys admin but
+based on if the sys admin wants ot view both comments and blogs, or only one of the options */
 async function handleReportListing(req, res) {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page = 1, pageSize = 10, contentType = 'BOTH' } = req.query; // Allow contentType to be 'BLOG', 'COMMENT', or 'BOTH'
     const skip = (page - 1) * pageSize;
     const take = parseInt(pageSize, 10);
-  
-    try {
-      // Step 1: Fetch all reports grouped by contentId and contentType
-      const reportGroups = await prisma.report.groupBy({
-        by: ['contentId', 'contentType'],
-        _count: { contentId: true },
-      });
-  
-      // Step 2: Fetch all reports to get explanations and group by contentId and contentType
-      const allReports = await prisma.report.findMany({
-        select: {
-          contentId: true,
-          contentType: true,
-          explanation: true,
-        },
-      });
-  
-      // Group explanations by contentId and contentType for easier lookup
-      const explanationsByContent = allReports.reduce((acc, report) => {
-        const key = `${report.contentType}-${report.contentId}`;
-        if (!acc[key]) {
-          acc[key] = [];
-        }
-        acc[key].push(report.explanation);
-        return acc;
-      }, {});
-  
-      // Step 3: Fetch all blogs and comments
-      const [allBlogs, allComments] = await Promise.all([
-        prisma.blog.findMany(),
-        prisma.comment.findMany(),
-      ]);
-  
-      // Step 4: Combine blogs and comments, attach report count and explanations
-      const contentWithReports = [
-        ...allBlogs.map(blog => ({
-          ...blog,
-          contentType: 'BLOG',
-          reportCount: reportGroups.find(
-            r => r.contentId === blog.id && r.contentType === 'BLOG'
-          )?._count.contentId || 0,
-          explanations: explanationsByContent[`BLOG-${blog.id}`] || [], // Attach explanations list
-        })),
-        ...allComments.map(comment => ({
-          ...comment,
-          contentType: 'COMMENT',
-          reportCount: reportGroups.find(
-            r => r.contentId === comment.id && r.contentType === 'COMMENT'
-          )?._count.contentId || 0,
-          explanations: explanationsByContent[`COMMENT-${comment.id}`] || [], // Attach explanations list
-        })),
-      ];
-  
-      // Step 5: Sort combined content by report count in descending order
-      const sortedContent = contentWithReports.sort((a, b) => b.reportCount - a.reportCount);
-  
-      // Step 6: Paginate the sorted results
-      const paginatedContent = sortedContent.slice(skip, skip + take);
-  
-      // Step 7: Prepare pagination metadata
-      const totalCount = contentWithReports.length;
-      const totalPages = Math.ceil(totalCount / pageSize);
-  
-      res.status(200).json({
-        data: paginatedContent,
-        meta: {
-          totalCount,
-          totalPages,
-          currentPage: parseInt(page, 10),
-          pageSize: take,
-        },
-      });
-    } catch (error) {
-      console.error('Error in handleReportSubmission:', error);
-      res.status(422).json({ error: 'Unprocessable Entity: Unable to process the request.' });
+
+    if(contentType !== 'BLOG' && contentType !== 'COMMENT' && contentType !== 'BOTH'){
+        return res.status(400).json({ error: 'Invalid content type. Must be "BLOG", "COMMENT", or "BOTH".' });
     }
-  }
-  
+
+    try {
+        // Step 1: Fetch report groups based on the contentType filter
+        const reportGroups = await prisma.report.groupBy({
+            by: ['contentId', 'contentType'],
+            _count: { contentId: true },
+            where: contentType === 'BOTH' ? {} : { contentType },
+        });
+
+        // Step 2: Fetch all reports to get explanations and group by contentId and contentType
+        const allReports = await prisma.report.findMany({
+            select: {
+                contentId: true,
+                contentType: true,
+                explanation: true,
+            },
+            where: contentType === 'BOTH' ? {} : { contentType },
+        });
+
+        // Group explanations by contentId and contentType for easier lookup
+        const explanationsByContent = allReports.reduce((acc, report) => {
+            const key = `${report.contentType}-${report.contentId}`;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(report.explanation);
+            return acc;
+        }, {});
+
+        // Step 3: Fetch blogs or comments based on the contentType filter
+        let allBlogs = [], allComments = [];
+        if (contentType === 'BOTH' || contentType === 'BLOG') {
+            allBlogs = await prisma.blog.findMany();
+        }
+        if (contentType === 'BOTH' || contentType === 'COMMENT') {
+            allComments = await prisma.comment.findMany();
+        }
+
+        // Step 4: Combine blogs and comments, attach report count and explanations
+        const contentWithReports = [
+            ...allBlogs.map(blog => ({
+                ...blog,
+                contentType: 'BLOG',
+                reportCount: reportGroups.find(
+                    r => r.contentId === blog.id && r.contentType === 'BLOG'
+                )?._count.contentId || 0,
+                explanations: explanationsByContent[`BLOG-${blog.id}`] || [],
+            })),
+            ...allComments.map(comment => ({
+                ...comment,
+                contentType: 'COMMENT',
+                reportCount: reportGroups.find(
+                    r => r.contentId === comment.id && r.contentType === 'COMMENT'
+                )?._count.contentId || 0,
+                explanations: explanationsByContent[`COMMENT-${comment.id}`] || [],
+            })),
+        ];
+
+        // Step 5: Sort combined content by report count in descending order
+        const sortedContent = contentWithReports.sort((a, b) => b.reportCount - a.reportCount);
+
+        // Step 6: Paginate the sorted results
+        const paginatedContent = sortedContent.slice(skip, skip + take);
+
+        // Step 7: Prepare pagination metadata
+        const totalCount = contentWithReports.length;
+        const totalPages = Math.ceil(totalCount / pageSize);
+
+        res.status(200).json({
+            message: 'Reports retrieved successfully',
+            data: paginatedContent,
+            pagination: {
+                total: totalCount,
+                page: parseInt(page, 10),
+                limit: take,
+                totalPages: totalPages,
+            },
+        });
+    } catch (error) {
+        console.error('Error in handleReportListing:', error);
+        res.status(422).json({ error: 'Unprocessable Entity: Unable to process the request.' });
+    }
+}

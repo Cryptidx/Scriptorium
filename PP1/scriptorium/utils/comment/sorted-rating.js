@@ -2,7 +2,9 @@ import prisma from "@/utils/db";
 import { authMiddleware } from "@/lib/auth";
 import {getReportsForUserContent} from "@/utils/comment-blog/find-report";
 
-// chat
+// GPT: create me a helper function based on
+// how i want to sort fetched comments or blogs based
+// on the request query parameters 
 export default async function handlerSorting(req, res, which) {
     // GET request 
     // not restricted 
@@ -11,7 +13,7 @@ export default async function handlerSorting(req, res, which) {
 
     // Only allow GET requests
     if (req.method !== "GET") {
-        return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
     // get list of blogs based on rating, descending, basd on upvotes
@@ -19,8 +21,8 @@ export default async function handlerSorting(req, res, which) {
     const limit = parseInt(req.query.limit, 10) || 10;
 
     // would be null for top level function, cos its directly under blogs
-    const blogId = req.query.blogId ? parseInt(req.query.blogId, 10) : null;
-
+    const blogId = req.query.id ? parseInt(req.query.id, 10) : null;
+    console.log(blogId);
     // Convert page and limit to integers and calculate skip
     const pageInt = parseInt(page);
     const limitInt = parseInt(limit);
@@ -59,7 +61,7 @@ export default async function handlerSorting(req, res, which) {
             // find current user to see if they have any reported blogs
             // so they can see the explanations, if they exist, fro being flagged
             // If the user is authenticated, find flagged blogs authored by them
-            if (authorId!=null) {
+            if (authorId!==null) {
                 const flaggedBlogIds = data
                     .filter(blog => blog.flagged && blog.authorId === authorId)
                     .map(blog => blog.id);
@@ -91,7 +93,7 @@ export default async function handlerSorting(req, res, which) {
                 // get comments within a blog
     
                 if(!blogId || isNaN(blogId)){
-                    return res.status(400).json({ message: "Invalid blog id" });
+                    return res.status(400).json({ error: "Invalid blog id" });
                 }
     
                 data = await prisma.comment.findMany({
@@ -112,46 +114,58 @@ export default async function handlerSorting(req, res, which) {
             else{
                 // get juiciest comments everywhere 
                 data = await prisma.comment.findMany({
-                    where: {
-                      parentId: null,  // Only fetch top-level comments
-                    },
+                    // where: {
+                    //   //parentId: null,  // Only fetch top-level comments
+                    // },
                     orderBy: { upvotes: "desc" },
                     skip: skip,
                     take: limitInt,
                 });
 
-                totalCount = await prisma.comment.count({
-                    where: { parentId: null },
-                  });
+                // totalCount = await prisma.comment.count({
+                //     where: { parentId: null },
+                //   });
+                totalCount = await prisma.comment.count();
             }
 
-            reportData = authorId ? await getReportsForUserContent(authorId, "COMMENT") : {};
+            if (authorId !== null) {
+                const flaggedCommentIds = data
+                    .filter(comment => comment.flagged && comment.authorId === authorId)
+                    .map(comment => comment.id);
+                
+                console.log("Flagged Comment IDs:", flaggedCommentIds);
 
-            newData = data.map(datum => {
-                const isAuthor = authorId && datum.authorId === authorId;
+                if (flaggedCommentIds.length > 0) {
+                    reportData = await getReportsForUserContent(authorId, "COMMENT", flaggedCommentIds);
+                }
+            }
+
+            console.log("Comment Report Data:", reportData);
+
+            newData = data.map(comment => {
+                const isAuthorOfFlagged = comment.flagged && comment.authorId === authorId;
                 return {
-                    ...datum,
-                    reports: isAuthor ? reportData[datum.id] || [] : undefined,
+                    ...comment,
+                    reports: isAuthorOfFlagged ? reportData[comment.id] || [] : undefined,
                 };
             });
-
-           
         }
-     
 
         return res.status(200).json({
-        data: newData,
-        pagination: {
-            total: totalCount,
-            page: pageInt,
-            limit: limitInt,
-            totalPages: Math.ceil(totalCount / limitInt),
-        },
+            message: "Success",
+            data: newData,
+            pagination: {
+                total: totalCount,
+                page: pageInt,
+                limit: limitInt,
+                totalPages: Math.ceil(totalCount / limitInt),
+            },
         });
     } 
     
     catch (error) {
+        console.log(error);
         console.error("Error fetching sorted blogs:", error);
-        return res.status(422).json({ message: "Failed to get sorted blogs or comments" });
+        return res.status(422).json({ error: "Failed to get sorted blogs or comments" });
     }
 }

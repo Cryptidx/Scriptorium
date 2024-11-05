@@ -1,14 +1,10 @@
-import bcrypt from 'bcrypt';
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 import {isValidPassword, isValidEmail, isValidPhoneNumber} from '../../../lib/validate';    
+import hashPassword from '../../../lib/helpers/account';
 
-const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
+// GPT: Create a helper based on my model for password hashing
+// Referenced code from past exercise with slight modifications
 
-
-// Hash password function
-async function hashPassword(password) {
-  return await bcrypt.hash(password, saltRounds);
-}
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
       res.setHeader('Allow', ['POST']);
@@ -46,14 +42,16 @@ export default async function handler(req, res) {
       });
     }
   
+    // Check if email already in use with existing user
     try {
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
         return res.status(400).json({ error: 'Email already in use.' });
       }
   
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPassword(password); // hash password
   
+      // create new user in db
       const newUser = await prisma.user.create({
         data: {
           firstName,
@@ -66,6 +64,7 @@ export default async function handler(req, res) {
       });
   
       res.status(201).json({
+        message: 'User registered successfully',
         user: {
           id: newUser.id,
           firstName: newUser.firstName,
@@ -78,13 +77,15 @@ export default async function handler(req, res) {
         },
       });
     } catch (error) {
-      console.error(error);
-      if (error.message.includes('validation') || error.code === 'P2002') {
-        // Prisma P2002 code is for unique constraint violations (e.g., duplicate email)
-        res.status(400).json({ error: 'Bad Request: Data validation failed or duplicate entry.' });
-      } else {
-        // Use 422 Unprocessable Entity for other unexpected issues
-        res.status(422).json({ error: 'Unprocessable Entity: Unable to create user.' });
-      }
+        // Show error to dev if case happens:
+        console.error(error);
+
+        if (error.message.includes('validation') || error.code === 'P2002') {
+            // Prisma P2002 code is for unique constraint violations (e.g., duplicate email)
+            res.status(400).json({ error: 'Bad Request: Data validation failed or duplicate entry.' });
+        } else {
+            // Use 422 Unprocessable Entity for other unexpected issues
+            res.status(422).json({ error: 'Unprocessable Entity: Unable to create user.' });
+        }
     }
   }
