@@ -139,7 +139,7 @@ async function runFile(lang, code, stdin = []) {
             return output;
 
         case "python":
-            var command = "python";
+            var command = process.platform === 'win32' ? 'python' : 'python3';;
             var args = [tempFile];
             
             output = await basicRun(command, args, stdin);
