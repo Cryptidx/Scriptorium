@@ -171,11 +171,11 @@ async function handleReportListing(req, res) {
         res.status(200).json({
             message: 'Reports retrieved successfully',
             data: paginatedContent,
-            meta: {
-                totalCount,
-                totalPages,
-                currentPage: parseInt(page, 10),
-                pageSize: take,
+            pagination: {
+                total: totalCount,
+                page: parseInt(page, 10),
+                limit: take,
+                totalPages: totalPages,
             },
         });
     } catch (error) {
