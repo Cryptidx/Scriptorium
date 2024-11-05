@@ -97,6 +97,10 @@ async function handleReportListing(req, res) {
     const skip = (page - 1) * pageSize;
     const take = parseInt(pageSize, 10);
 
+    if(contentType !== 'BLOG' && contentType !== 'COMMENT' && contentType !== 'BOTH'){
+        return res.status(400).json({ error: 'Invalid content type. Must be "BLOG", "COMMENT", or "BOTH".' });
+    }
+
     try {
         // Step 1: Fetch report groups based on the contentType filter
         const reportGroups = await prisma.report.groupBy({
@@ -165,6 +169,7 @@ async function handleReportListing(req, res) {
         const totalPages = Math.ceil(totalCount / pageSize);
 
         res.status(200).json({
+            message: 'Reports retrieved successfully',
             data: paginatedContent,
             meta: {
                 totalCount,
