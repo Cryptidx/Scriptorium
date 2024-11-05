@@ -1,0 +1,1188 @@
+{
+	"info": {
+		"_postman_id": "878b6ae0-9e7a-4ec8-8b27-d9e3622283f9",
+		"name": "postman.json",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36746232",
+		"_collection_link": "https://no-crumbs.postman.co/workspace/My-Workspace~9903966f-a2f4-4bf3-875a-2116912f30d7/collection/30169124-878b6ae0-9e7a-4ec8-8b27-d9e3622283f9?action=share&source=collection_link&creator=36746232"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"johndoe@example2.com\",\n  \"password\": \"SecurePassword1!\",\n  \"confirmPassword\": \"SecurePassword1!\",\n  \"phoneNumber\": \"1234567890\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let response = pm.response.json();",
+									"if (response.accessToken && response.refreshToken) {",
+									"    pm.environment.set(\"accessToken\", response.accessToken);",
+									"    pm.environment.set(\"refreshToken\", response.refreshToken);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"SecurePassword1!\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update_all",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"NewFirstName\",\n  \"lastName\": \"NewLastName\",\n  \"email\": \"newemail3333@example.com\",\n  \"password\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\",\n  \"phoneNumber\": \"1234567890\",\n  \"avatar\": \"/avatar_images/pfp3.png\"\n}\n\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/update",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"update"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update_avatar",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"avatar\": \"/avatar_images/pfp2.png\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/update",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"update"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "refresh_token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let response = pm.response.json();",
+									"if (response.accessToken) {",
+									"    pm.environment.set(\"accessToken\", response.accessToken);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-refresh-token",
+								"value": "{{refreshToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Code_execution",
+			"item": [
+				{
+					"name": "Simple_Tests",
+					"item": [
+						{
+							"name": "javascript_simple",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"javascript\",\r\n    \"code\": \"console.log(\\\"JavaScript File\\\");\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "python_simple",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"python\",\r\n    \"code\": \"print(\\\"Python File\\\")\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "java_simple",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"java\",\r\n    \"code\": \"public class file { public static void main(String[] args) { System.out.println(\\\"Java File\\\"); } }\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "c_simple",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"c\",\r\n    \"code\": \"#include <stdio.h>\\nint main() { printf(\\\"C File\\\\n\\\"); return 0; }\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "c++_simple",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"c++\",\r\n    \"code\": \"#include <iostream>\\nint main() { std::cout << \\\"C++ File\\\" << std::endl; return 0; }\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Input_Tests",
+					"item": [
+						{
+							"name": "javascript_input",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"javascript\",\r\n    \"code\": \"const readline = require('node:readline');const rl = readline.createInterface({input: process.stdin,output: process.stdout,});rl.question(\\\"\\\", user_input => {console.log(user_input);rl.close();});\",\r\n    \"inputs\": [\"JavaScript Input\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "python_input",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"python\",\r\n    \"code\": \"user_input = input()\\nprint(user_input)\",\r\n    \"inputs\": [\"Python Input\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "java_input",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"java\",\r\n    \"code\": \"import java.util.Scanner; class file { public static void main(String[] args) { Scanner scanner = new Scanner(System.in); String user_input = scanner.nextLine(); System.out.println(user_input); } }\",\r\n    \"inputs\": [\"Java Input\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "c_input",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"c\",\r\n    \"code\": \"#include <stdio.h>\\nint main() { char user_input[20]; fgets(user_input, 20, stdin); printf(\\\"%s\\\", user_input); return 0; }\",\r\n    \"inputs\": [\"C Input\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "c++_input",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lang\": \"c++\",\r\n    \"code\": \"#include <iostream>\\n#include <string>\\nint main() { std::string user_input; std::getline(std::cin, user_input); std::cout << user_input << std::endl; return 0; }\",\r\n    \"inputs\": [\"C++ Input\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/template/run",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"template",
+										"run"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Blog",
+			"item": [
+				{
+					"name": "create_blog",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"My Blog Title\",\n  \"description\": \"This is the description of the blog.\",\n  \"tags\": [\"strin ghjgjh g1\", \"python\"] // Tags array must be a list of strings\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/blog",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_all",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/blog?page=1&limit=120&tags=python",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "120"
+								},
+								{
+									"key": "tags",
+									"value": "python"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Blog Title\",\n  \"description\": \"This is the updated description of the blog.\",\n  \"tags\": [\"javascript\", \"webdev\"],\n  \"upvotes\": 5,\n  \"downvotes\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/blog/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/blog/2",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add_toplevel_comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"This is my THIRD comment.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/blog/2/comment",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"2",
+								"comment"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add_reply",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"This is my second reply.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/blog/2/comment/1/reply",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"2",
+								"comment",
+								"1",
+								"reply"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_by_rating_blogs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/blog/sorted-rating",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"sorted-rating"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_by_rating_comment_blog",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/blog/2/comment/sorted-rating",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"2",
+								"comment",
+								"sorted-rating"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comment",
+			"item": [
+				{
+					"name": "update_comment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"This is the updated description of the comment.\",\n  \"upvotes\": 5,\n  \"downvotes\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/comment/2",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"comment",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_by_rating_comments_all",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/comment/sorted-rating",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"comment",
+								"sorted-rating"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Code_Template",
+			"item": [
+				{
+					"name": "create_template",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"code\": \"print(\\\"Python File\\\")\",\r\n    \"language\": \"python\",\r\n    \"title\": \"Simple Print\",\r\n    \"explanation\": \"A simple python file that only prints one line\",\r\n    \"tags\": [\"python\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/template",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"template"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_query",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/template?page=1&limit=120&tags=printing,strin ghjgjh g1&language=python&blogs=1,300",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"template"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "120"
+								},
+								{
+									"key": "tags",
+									"value": "printing,strin ghjgjh g1"
+								},
+								{
+									"key": "language",
+									"value": "python"
+								},
+								{
+									"key": "blogs",
+									"value": "1,300"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update_template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"explanation\": \"This explanation has been updated\",\r\n    \"blogs\": [1, 3, 4],\r\n    \"tags\": [\"strin ghjgjh g1\", \"python\", \"chicken\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/template/8",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"template",
+								"8"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete_template",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/template/8",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"template",
+								"8"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/template/6",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"template",
+								"6"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Code_Template_And_Blog",
+			"item": [
+				{
+					"name": "add_link",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/blog/1/template/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"1",
+								"template",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "remove_link",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/blog/1/template/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"blog",
+								"1",
+								"template",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentId\": 1,         // ID of the content (blog or comment)\n  \"contentType\": \"COMMENT\",    // Either \"BLOG\" or \"COMMENT\"\n  \"explanation\": \"Inappropriate blablabla.\" // Explanation for the report\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reports/report",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports",
+								"report"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get_reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/report?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports",
+								"report"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
