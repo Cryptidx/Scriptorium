@@ -1,5 +1,4 @@
 const { runFile, fileEnd } = require("../lib/code-run.js");
-const assert = require('assert');
 
 const basicTests = [
     { lang: "javascript", code: "console.log(\"JavaScript File\");" },
@@ -37,6 +36,7 @@ const inputTests = [
 ];
 
 async function runTests() {
+    // general function for testing the code-run.js file without an API call
     console.log("Basic Tests:\n");
 
     for (const test of basicTests) {

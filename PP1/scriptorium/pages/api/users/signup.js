@@ -1,6 +1,6 @@
 import prisma from '../../../lib/prisma'; // Adjust path as necessary
 import {isValidPassword, isValidEmail, isValidPhoneNumber} from '../../../lib/validate';    
-import {hashPassword} from '../../../lib/auth';
+import hashPassword from '../../../lib/helpers/account';
 
 // GPT: Create a helper based on my model for password hashing
 // Referenced code from past exercise with slight modifications

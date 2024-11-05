@@ -2,15 +2,25 @@ import prisma from "@/utils/db"
 import { authMiddleware } from "@/lib/auth";
 
 async function handlerDelete(req, res) {
+    // DELETE handler, restricted to users only 
+    // expects id and templateId
     if (req.method !== "DELETE") {
-        return res.status(405).json({ error: "Method not allowed" });
+        return res.status(405).json({ error: "must use DELETE method"} );
     }
 
+    // authenticates user
+    const author = await authMiddleware(req, res, { getFullUser: true } );
+    if (!author) {
+        return res.status(401).json({ error: "Unauthorized. Please log in to create code." });
+    }
+
+    // converts blogId and templateId to a String
     const blogId = parseInt(req.query.id);
     const templateId = parseInt(req.query.templateId);
 
-    // Validate IDs
+    // returns error if either id is NaN
     if (isNaN(blogId) || isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid blog or template ID" });
         return res.status(400).json({ error: "Invalid blog or template ID" });
     }
 
@@ -40,22 +50,41 @@ async function handlerDelete(req, res) {
             where: { id: templateId }
         });
 
+        // returns error if template does not exist
         if (!template) {
             return res.status(404).json({ error: "Not a valid template ID" })
         }
 
-        const updatedBlog = await prisma.blog.update({
-        where: { id: blogId },
-        data: {
-            templates: {
-            disconnect: [{id: template.id}],
-            }
-        }, 
-        include: {
-            templates: true,
-        },
+        // gets blog from given blogId
+        const blog = await prisma.blog.findUnique({
+            where: { id: blogId }
         });
 
+        // returns error if blog does not exist
+        if (!blog) {
+            return res.status(404).json({ error: "Not a valid blog ID" })
+        }
+
+        // returns error if user is not an admin or if not the author of the blog
+        if (author.role !== "SYS_ADMIN" && author.id !== blog.authorId) {
+            return res.status(403).json({error: "You do not have correct permission"});
+        }
+
+        // removes template from blog
+        const updatedBlog = await prisma.blog.update({
+            where: { id: blogId },
+            data: {
+                templates: {
+                    disconnect: [{id: template.id}], // disconnect due to many-to-many relation
+                }
+            }, 
+            include: {
+                templates: true,
+            },
+        });
+
+        // returns the updated blog
+        return res.status(200).json({ message: "Successfully removed template", blog: updatedBlog});
         // Return the found template
         return res.status(200).json({message: "Success!", changedBlog: updatedBlog});
 
@@ -66,15 +95,25 @@ async function handlerDelete(req, res) {
 }
 
 async function handlerUpdate(req, res) {
+    // PUT handler, restricted to users only 
+    // expects id and templateId
     if (req.method !== "PUT") {
-        return res.status(405).json({ message: "Method not allowed" });
+        return res.status(405).json({ error: "must use PUT method"} );
     }
 
+    // authenticates user
+    const author = await authMiddleware(req, res, { getFullUser: true } );
+    if (!author) {
+        return res.status(401).json({ error: "Unauthorized. Please log in to create code." });
+    }
+
+    // converts blogId and templateId to a String
     const blogId = parseInt(req.query.id);
     const templateId = parseInt(req.query.templateId);
 
-    // Validate IDs
+    // returns error if either id is NaN
     if (isNaN(blogId) || isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid blog or template ID" });
         return res.status(400).json({ error: "Invalid blog or template ID" });
     }
 
@@ -106,24 +145,40 @@ async function handlerUpdate(req, res) {
         where: { id: templateId }
         });
 
+        // returns error if template does not exist
         if (!template) {
             return res.status(404).json({ error: "Not a valid template ID" })
         }
 
-        const updatedBlog = await prisma.blog.update({
-        where: { id: blogId },
-        data: {
-            templates: {
-            connect: {id: template.id},
-            }
-        }, 
-        include: {
-            templates: true,
-        },
+        // gets blog from given blogId
+        const blog = await prisma.blog.findUnique({
+            where: { id: blogId }
         });
 
-        // Return the updated blog with templates
-        return res.status(200).json({message: "Success!", changedBlog: updatedBlog});
+        // returns error if blog does not exist
+        if (!blog) {
+            return res.status(404).json({ error: "Not a valid blog ID" })
+        }
+
+        // returns error if user is not an admin or if not the author of the blog
+        if (author.role !== "SYS_ADMIN" && author.id !== blog.authorId) {
+            return res.status(403).json({error: "You do not have correct permission"});
+        }
+
+        const updatedBlog = await prisma.blog.update({
+        where: { id: blogId },
+            data: {
+                templates: {
+                    connect: {id: template.id}, // connect due to many-to-many relation
+                }
+            }, 
+            include: {
+                templates: true,
+            },
+        });
+
+        // returns the updated blog
+        return res.status(200).json({ message: "Successfully added template", blog: updatedBlog});
 
     } catch (error) {
         console.log("failed to update template: ", error)
@@ -143,8 +198,7 @@ export default async function handler(req, res) {
             await handlerUpdate(req, res);
             return;
         
-
         default:
-            res.setHeader("Allow", ["GET", "DELETE", "PUT"]).status(405).json({ error: "Method " + req.method + " Not Allowed"});
+            return res.status(405).json({ error: "must use DELETE or PUT method"} );
     }
 }
