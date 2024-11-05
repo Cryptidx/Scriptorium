@@ -19,8 +19,8 @@ export default async function handlerSorting(req, res, which) {
     const limit = parseInt(req.query.limit, 10) || 10;
 
     // would be null for top level function, cos its directly under blogs
-    const blogId = req.query.blogId ? parseInt(req.query.blogId, 10) : null;
-
+    const blogId = req.query.id ? parseInt(req.query.id, 10) : null;
+    console.log(blogId);
     // Convert page and limit to integers and calculate skip
     const pageInt = parseInt(page);
     const limitInt = parseInt(limit);
@@ -112,17 +112,18 @@ export default async function handlerSorting(req, res, which) {
             else{
                 // get juiciest comments everywhere 
                 data = await prisma.comment.findMany({
-                    where: {
-                      parentId: null,  // Only fetch top-level comments
-                    },
+                    // where: {
+                    //   //parentId: null,  // Only fetch top-level comments
+                    // },
                     orderBy: { upvotes: "desc" },
                     skip: skip,
                     take: limitInt,
                 });
 
-                totalCount = await prisma.comment.count({
-                    where: { parentId: null },
-                  });
+                // totalCount = await prisma.comment.count({
+                //     where: { parentId: null },
+                //   });
+                totalCount = await prisma.comment.count();
             }
 
             if (authorId !== null) {
@@ -160,6 +161,7 @@ export default async function handlerSorting(req, res, which) {
     } 
     
     catch (error) {
+        console.log(error);
         console.error("Error fetching sorted blogs:", error);
         return res.status(422).json({ message: "Failed to get sorted blogs or comments" });
     }
