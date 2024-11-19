@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tag {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  blogs Blog[]  @relation("BlogTags")
+  templates Template[] @relation("TemplateTags")
+}
+
+model Template {
+  id           Int       @id @default(autoincrement())
+  ownerId      Int       // Foreign key to User
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  forkedFromId Int?      // Nullable foreign key to reference another Template's ID
+  forkedFrom   Template? @relation("ForkedTemplates", fields: [forkedFromId], references: [id])
+  forkedCopies Template[] @relation("ForkedTemplates")
+
+  code         String    // File path to the code saved on the server
+  language     String
+  title        String
+  explanation  String
+  tags         Tag[]     @relation("TemplateTags") // Many-to-many relationship with Tag
+
+  // Many-to-many relationship with blogs
+  blogs        Blog[]    @relation("BlogTemplates")
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ROLE TYPES: "USER", "SYS_ADMIN"
+
+model User {
+  id          Int       @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String    @unique
+  password    String
+  phoneNumber String
+  role        String    @default("USER")
+  avatar      String    @default("/avatar_images/pfp5.png")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  blogs       Blog[]    // One user can create many blogs
+  comments    Comment[] // One user can make many comments
+  templates   Template[] // One user can create many templates
+  reports     Report[]     // One user can create many reports
+}
+
+
+model Blog {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  tags        Tag[]     @relation("BlogTags")      // Many-to-many relationship with Tag
+  templates   Template[] @relation("BlogTemplates")  // a blog can have many templates, or no templates
+
+  flagged     Boolean    @default(false)
+  authorId    Int
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime   @default(now())
+  comments    Comment[]
+  upvotes     Int @default(0)
+  downvotes   Int @default(0)
+}
+
+model Comment {
+  id          Int       @id @default(autoincrement())
+  blogId      Int
+  blog        Blog      @relation(fields: [blogId], references: [id], onDelete: Cascade) // Cascade delete
+
+  flagged     Boolean   @default(false)
+  description String
+
+  authorId    Int
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  parentId    Int?
+  parent      Comment?  @relation("Subcomments", fields: [parentId], references: [id], onDelete: Cascade)
+  subcomments Comment[] @relation("Subcomments")
+
+  upvotes Int @default(0)
+  downvotes Int @default(0)
+}
+
+
+model Report {
+  id           Int      @id @default(autoincrement())
+  contentId    Int      // ID of the reported content (Blog or Comment)
+  contentType  String   // Type of content: "BLOG" or "COMMENT"
+  explanation  String   // Additional explanation provided by the user
+
+  authorId     Int      // Foreign key to the User model for the reporting user
+  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+}
