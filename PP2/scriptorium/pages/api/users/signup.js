@@ -48,8 +48,11 @@ export default async function handler(req, res) {
       if (existingUser) {
         return res.status(400).json({ error: 'Email already in use.' });
       }
+
+      const saltRounds = Math.floor(Math.random() * (16 - 10 + 1)) + 10;
+      // do not need to store the salt rounds in the database because bcrypt already embeds the salt and the salt rounds (cost factor) into the hashed password
   
-      const hashedPassword = await hashPassword(password); // hash password
+      const hashedPassword = await hashPassword(password, saltRounds); // hash password
   
       // create new user in db
       const newUser = await prisma.user.create({
