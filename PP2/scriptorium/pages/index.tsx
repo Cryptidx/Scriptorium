@@ -12,9 +12,6 @@ const MainPage = () => {
   const { user, setUser } = useUser();
   const router = useRouter();
 
-  if (user != null) {
-    router.push("/home")
-  }
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
