@@ -1,6 +1,7 @@
 import Header from "@/components/header";
 import { useState } from "react";
 import { useRouter } from "next/router";
+import { useUser } from "@/context/userContext";
 
 const MainPage = () => {
   const [email, setemail] = useState("");
@@ -8,7 +9,12 @@ const MainPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { user, setUser } = useUser();
   const router = useRouter();
+
+  if (user != null) {
+    router.push("/home")
+  }
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -25,6 +31,9 @@ const MainPage = () => {
       });
 
       const data = await response.json();
+      const { id, firstName, role } = data.user;
+
+      setUser({ id, firstName, role });
 
       if (!response.ok) {
         setErrorMessage(data.error);
