@@ -2,14 +2,7 @@ import prisma from '../../../lib/prisma';
 import { isValidPassword, isValidEmail, isValidPhoneNumber } from '../../../lib/validate';
 import { authMiddleware } from '../../../lib/auth'; 
 import hashPassword from '../../../lib/helpers/account';
-
-const allowedAvatars = [ // only allowed avatars by default
-    '/avatar_images/pfp1.png',
-    '/avatar_images/pfp2.png',
-    '/avatar_images/pfp3.png',
-    '/avatar_images/pfp4.png',
-    '/avatar_images/pfp5.png',
-];
+import { getUserFilesWithAvatars} from '../../../lib/helpers/getAvatars';
 
 // Main handler logic for updating user details
 /* method ensures only the current user authenticated with their token
@@ -24,6 +17,8 @@ async function updateHandler(req, res) {
     if (!authRes) return; // Exit if unauthorized
 
     const { userId } = authRes;
+
+    const allowedAvatars = await getUserFilesWithAvatars(userId);
 
     const { firstName, lastName, password, confirmPassword, email, phoneNumber, avatar } = req.body;
     let updates = {};

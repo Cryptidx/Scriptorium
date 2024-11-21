@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import multer from 'multer';
+import { authMiddleware } from '../../../lib/auth'; 
 
 export const config = {
   api: {
@@ -16,6 +17,10 @@ const upload = multer({ storage }).single('file');
 const handler = async (req, res) => {
   if (req.method === 'POST') {
     try {
+      // Authenticate the user
+      const user = await authMiddleware(req, res);
+      if (!user) return; // Authentication failed, response already sent
+
       // Use Multer to parse the multipart form data
       await new Promise((resolve, reject) => {
         upload(req, res, (err) => {
@@ -40,8 +45,8 @@ const handler = async (req, res) => {
         return res.status(400).json({ error: 'Invalid or corrupted image file' });
       }
 
-      // Save the processed file
-      const uploadDir = path.join(process.cwd(), 'public/uploads');
+      // Save the processed file in a user-specific directory
+      const uploadDir = path.join(process.cwd(), 'public/uploads', String(req.userId));
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
@@ -51,7 +56,7 @@ const handler = async (req, res) => {
 
       res.status(200).json({
         message: 'File uploaded successfully!',
-        filePath: `/uploads/${path.basename(filePath)}`,
+        filePath: `/uploads/${req.userId}/${path.basename(filePath)}`,
       });
     } catch (error) {
       res.status(500).json({ error: `Failed to upload file: ${error.message}` });
