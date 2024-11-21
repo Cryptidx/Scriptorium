@@ -123,9 +123,23 @@ async function handlerGet(req,res){
         const author = await authMiddleware(req, res, {getFullUser: true});
         const authorId = author ? author.id : null;
 
+        // Add additional logic for flagged blogs
+        if (!authorId) {
+            // For unauthenticated users: exclude all flagged blogs
+            filters.AND.push({ flagged: false });
+        } else {
+            // For authenticated users: include flagged blogs only if authored by the user
+            filters.AND.push({
+                OR: [
+                    { flagged: false }, // Include non-flagged blogs
+                    { flagged: true, authorId: authorId }, // Include flagged blogs authored by the user
+                ],
+            });
+        }
+
         const blogs = await prisma.blog.findMany({
             where: filters,
-            skip: (page - 1) * limit,
+            skip: (parseInt(page) - 1) * parseInt(limit),
             take: parseInt(limit),
             include: {  
                 author: {
@@ -142,50 +156,43 @@ async function handlerGet(req,res){
             },
         });
 
-
-
-        // If user is authenticated, find flagged blogs authored by them
+        // If user is authenticated, fetch reports for their flagged blogs
         let reportData = {};
         if (authorId) {
-            const flaggedBlogIds = blogs
-                .filter(blog => blog.flagged && blog.authorId === authorId)
-                .map(blog => blog.id);
+            // Fetch reports for flagged blogs authored by the authenticated user
+            const flaggedBlogIds = blogs.filter(blog => blog.flagged).map(blog => blog.id);
 
-            console.log(flaggedBlogIds);
-
-            // Fetch reports for flagged blogs authored by the user
             if (flaggedBlogIds.length > 0) {
                 reportData = await getReportsForUserContent(authorId, "BLOG", flaggedBlogIds);
             }
         }
 
-        // Attach reports to flagged blogs authored by the current user
-        const enrichedBlogs = blogs.map(blog => {
-            const isAuthor = authorId && blog.authorId === authorId;
-            return {
-                ...blog,
-                reports: isAuthor ? reportData[blog.id] || [] : undefined,
-            };
-        });
-
-        // some of the blog will have report, 
-        // some will have report as undefined, cos some flagged content won't have reports 
-
+        // Enrich blogs by attaching reports for flagged blogs authored by the authenticated user
+        const enrichedBlogs = blogs.map(blog => ({
+            ...blog,
+            reports: blog.flagged && blog.authorId === authorId ? reportData[blog.id] || [] : undefined,
+        }));
         
-        // Calculate total count for pagination
-        const totalCount = await prisma.blog.count({ where: filters });
+        // Calculate total count with the same filters
+        const totalCount = await prisma.blog.count({where: filters,});
+        const totalPages = Math.ceil(totalCount / parseInt(limit));
+        const currentPage = parseInt(page);
+        const pagesLeft = totalPages - currentPage;
 
-        // Return enriched blogs with pagination info
+        // Return enriched blogs with extended pagination info
         return res.status(200).json({
             message: "Blogs fetched successfully",
             data: enrichedBlogs,
             pagination: {
                 total: totalCount,
-                page: parseInt(page),
+                firstPage: 1,
+                currentPage: currentPage,
+                totalPages: totalPages,
+                pagesLeft: pagesLeft > 0 ? pagesLeft : 0, // Ensure non-negative pagesLeft
                 limit: parseInt(limit),
-                totalPages: Math.ceil(totalCount / limit),
             },
         });
+
     } catch (error) {
         console.error("Error fetching blog:", error);
         return res.status(422).json({ error: "Unprocessable entity: Unable to get the blogs" });

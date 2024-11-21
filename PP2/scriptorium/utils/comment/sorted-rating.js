@@ -51,8 +51,23 @@ export default async function handlerSorting(req, res, which) {
         console.log(authorId);
 
         if(which === 0){
+            const filters = {
+                AND: [
+                    // Flagged content logic
+                    authorId
+                        ? {
+                              OR: [
+                                  { flagged: false }, // Include non-flagged blogs
+                                  { flagged: true, authorId: authorId }, // Include flagged blogs authored by the user
+                              ],
+                          }
+                        : { flagged: false }, // For unauthenticated users, exclude flagged blogs
+                ],
+            };
+
             // get blogs 
             data = await prisma.blog.findMany({
+                where: filters,
                 orderBy: { upvotes: "desc" },
                 skip: skip,
                 take: limitInt,
@@ -61,35 +76,51 @@ export default async function handlerSorting(req, res, which) {
             // find current user to see if they have any reported blogs
             // so they can see the explanations, if they exist, fro being flagged
             // If the user is authenticated, find flagged blogs authored by them
-            if (authorId!==null) {
+            if (authorId) {
                 const flaggedBlogIds = data
                     .filter(blog => blog.flagged && blog.authorId === authorId)
                     .map(blog => blog.id);
-                
-                    console.log(flaggedBlogIds);
 
-                // Fetch explanations for flagged blogs authored by the user
                 if (flaggedBlogIds.length > 0) {
                     reportData = await getReportsForUserContent(authorId, "BLOG", flaggedBlogIds);
                 }
             }
 
             console.log(reportData);
+
+            data = data.map(blog => ({
+                ...blog,
+                reports: blog.flagged && blog.authorId === authorId ? reportData[blog.id] || [] : undefined,
+            }));
+
+            totalCount = await prisma.blog.count({ where: filters });
     
-            // Map over blogs, attach reports if user is the author of flagged blogs
-            newData = data.map(blog => {
-                const isAuthorOfFlagged = blog.flagged && blog.authorId === authorId;
-                return {
-                    ...blog,
-                    reports: isAuthorOfFlagged ? reportData[blog.id] || [] : undefined,
-                };
-            });
-            
-            totalCount = await prisma.blog.count();
         }
 
         if(which > 0){
-            if(which === 1){
+            const filters = {
+                AND: [
+                    // Flagged content logic
+                    authorId
+                        ? {
+                              OR: [
+                                  { flagged: false }, // Include non-flagged comments
+                                  { flagged: true, authorId: authorId }, // Include flagged comments authored by the user
+                              ],
+                          }
+                        : { flagged: false }, // For unauthenticated users, exclude flagged comments
+                ],
+            };
+
+            if (which === 1) {
+                // Comments within a specific blog
+                if (!blogId || isNaN(blogId)) {
+                    return res.status(400).json({ error: "Invalid blog ID" });
+                }
+                filters.AND.push({ blogId: blogId, parentId: null });
+            }
+
+            /*if(which === 1){
                 // get comments within a blog
     
                 if(!blogId || isNaN(blogId)){
@@ -126,39 +157,49 @@ export default async function handlerSorting(req, res, which) {
                 //     where: { parentId: null },
                 //   });
                 totalCount = await prisma.comment.count();
-            }
+            }*/
 
-            if (authorId !== null) {
+            data = await prisma.comment.findMany({
+                where: filters,
+                orderBy: { upvotes: "desc" },
+                skip: skip,
+                take: limitInt,
+            });
+        
+            if (authorId) {
                 const flaggedCommentIds = data
                     .filter(comment => comment.flagged && comment.authorId === authorId)
                     .map(comment => comment.id);
-                
-                console.log("Flagged Comment IDs:", flaggedCommentIds);
 
                 if (flaggedCommentIds.length > 0) {
                     reportData = await getReportsForUserContent(authorId, "COMMENT", flaggedCommentIds);
                 }
             }
 
-            console.log("Comment Report Data:", reportData);
+            data = data.map(comment => ({
+                ...comment,
+                reports: comment.flagged && comment.authorId === authorId ? reportData[comment.id] || [] : undefined,
+            }));
 
-            newData = data.map(comment => {
-                const isAuthorOfFlagged = comment.flagged && comment.authorId === authorId;
-                return {
-                    ...comment,
-                    reports: isAuthorOfFlagged ? reportData[comment.id] || [] : undefined,
-                };
-            });
+            totalCount = await prisma.comment.count({ where: filters });
         }
 
+        // Calculate total count with the same filters
+        const totalPages = Math.ceil(totalCount / limitInt);
+        const currentPage = pageInt;
+        const pagesLeft = totalPages - currentPage;
+
+        // Return enriched blogs with extended pagination info
         return res.status(200).json({
             message: "Success",
-            data: newData,
+            data: data,
             pagination: {
                 total: totalCount,
-                page: pageInt,
+                firstPage: 1,
+                currentPage: currentPage,
+                totalPages: totalPages,
+                pagesLeft: pagesLeft > 0 ? pagesLeft : 0, // Ensure non-negative pagesLeft
                 limit: limitInt,
-                totalPages: Math.ceil(totalCount / limitInt),
             },
         });
     } 
